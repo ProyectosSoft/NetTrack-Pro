@@ -26,6 +26,9 @@ begin
          data jsonb not null default ''{}''::jsonb
        )', t);
     execute format('alter table public.%I enable row level security', t);
+    -- Grant table privileges to the API roles (independent of the project's
+    -- "expose new tables" setting), so the anon key can always reach them.
+    execute format('grant all on public.%I to anon, authenticated', t);
     execute format('drop policy if exists public_all on public.%I', t);
     execute format(
       'create policy public_all on public.%I
