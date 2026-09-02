@@ -64,6 +64,18 @@ export function makeEntity(store) {
       for (const h of hits) await store.remove(h.id);
       return { deleted: hits.length };
     },
+    // Bulk upsert preserving each record's own id (and created/updated dates when
+    // present). Used by the import tool; a full overwrite, no read-merge.
+    async importMany(records) {
+      let n = 0;
+      const now = new Date().toISOString();
+      for (const rec of records) {
+        if (!rec || !rec.id) continue;
+        await store.put({ created_date: now, updated_date: now, ...rec });
+        n += 1;
+      }
+      return n;
+    },
   };
 }
 
