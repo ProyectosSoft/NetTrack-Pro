@@ -142,8 +142,8 @@ export default function Floors() {
                 to={`/pisos/${f.id}`}
                 className="block bg-card rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="flex flex-col">
                       <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveFloor(idx, -1); }}
@@ -160,20 +160,20 @@ export default function Floors() {
                         <ArrowDown className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Building2 className="w-5 h-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium">{f.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{f.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {floorSpaces.length} espacios · {floorPoints.length} puntos
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="text-right mr-2">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="text-right mr-1 sm:mr-2">
                       <p className="text-sm font-semibold">{pct}%</p>
-                      <div className="w-24 h-1.5 bg-muted rounded-full mt-1">
+                      <div className="w-16 sm:w-24 h-1.5 bg-muted rounded-full mt-1 hidden sm:block">
                         <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>

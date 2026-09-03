@@ -159,17 +159,17 @@ export default function Templates() {
             const totalItems = (tpl.activities?.length || 0) + (tpl.accessories?.length || 0) + (tpl.equipment?.length || 0) + (tpl.custom_checks?.filter((c) => c.enabled !== false).length || 0);
             return (
               <div key={tpl.id} className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-muted/30">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Icon className="w-4 h-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{tpl.name}</p>
-                      <p className="text-xs text-muted-foreground">{DEVICE_LABELS[tpl.device_type]} · {totalItems} items</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{tpl.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{DEVICE_LABELS[tpl.device_type]} · {totalItems} items</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button variant="ghost" size="sm" onClick={() => setEditTpl({ ...tpl })}>Editar</Button>
                     <button type="button" onClick={() => setDeleteTarget(tpl)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
