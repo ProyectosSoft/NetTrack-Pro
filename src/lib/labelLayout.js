@@ -17,6 +17,13 @@ export const DEVICE_LABELS = {
   access_point: "AP WiFi",
 };
 
+// Default per-device text colours (match the app's DeviceIcon palette).
+export const DEVICE_COLORS = {
+  ethernet: "#2563eb",
+  camara: "#9333ea",
+  access_point: "#16a34a",
+};
+
 // Fields that can optionally be shown on each label, in render order.
 export const LABEL_FIELDS = [
   { key: "floor", label: "Piso" },
@@ -63,6 +70,14 @@ export const DEFAULT_CONFIG = {
   bold: true,
   align: "center", // left | center | right
 
+  // Per-device text colour: when on, each label's text uses deviceColors[type]
+  colorByDevice: false,
+  deviceColors: { ...DEVICE_COLORS },
+
+  // Device-type icon (camera / wifi / ethernet)
+  showIcon: false,
+  iconPosition: "start", // start | end (relative to the name)
+
   // Which extra fields to include
   fields: {
     floor: false,
@@ -89,12 +104,21 @@ export function sanitizeConfig(input = {}) {
     ...DEFAULT_CONFIG,
     ...input,
     fields: { ...DEFAULT_CONFIG.fields, ...(input.fields || {}) },
+    deviceColors: { ...DEFAULT_CONFIG.deviceColors, ...(input.deviceColors || {}) },
   };
   for (const key of NUMERIC_KEYS) {
     const n = Number(merged[key]);
     merged[key] = Number.isFinite(n) ? n : DEFAULT_CONFIG[key];
   }
   return merged;
+}
+
+// The text colour to use for a given point, honouring the per-device option.
+export function resolveTextColor(point, config) {
+  if (config.colorByDevice) {
+    return (config.deviceColors || {})[point.device_type] || config.textColor;
+  }
+  return config.textColor;
 }
 
 // Returns the effective page dimensions (mm) taking orientation into account.

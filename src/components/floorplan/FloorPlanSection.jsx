@@ -13,6 +13,11 @@ import { resolvePinStyle } from "@/lib/branding";
 
 const isPlaced = (p) => Number.isFinite(p.plan_x) && Number.isFinite(p.plan_y);
 
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 5;
+const ZOOM_STEP = 0.5;
+const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 10) / 10));
+
 // Accepts "12,5" as well as "12.5". Empty or invalid input clears the value,
 // stored as 0 because the entity field is a plain number.
 const parseMeters = (value) => {
@@ -43,11 +48,46 @@ export default function FloorPlanSection({ floor, points }) {
     setZoom(1);
   }, [floor.id, floor.width, floor.length]);
 
-  const ZOOM_MIN = 1;
-  const ZOOM_MAX = 5;
-  const ZOOM_STEP = 0.5;
-  const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) * 10) / 10));
-  const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) * 10) / 10));
+  const zoomIn = () => setZoom((z) => clampZoom(z + ZOOM_STEP));
+  const zoomOut = () => setZoom((z) => clampZoom(z - ZOOM_STEP));
+
+  // Ctrl+wheel (or trackpad pinch, which fires wheel+ctrlKey) and touch pinch
+  // zoom. Wired natively so preventDefault works (React wheel/touch are passive).
+  const scrollRef = useRef(null);
+  const zoomRef = useRef(1);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (!e.ctrlKey) return; // plain scroll pans; Ctrl+wheel zooms
+      e.preventDefault();
+      setZoom((z) => clampZoom(z + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)));
+    };
+    const twoFingerDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    let pinch = null;
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) pinch = { dist: twoFingerDist(e.touches), zoom: zoomRef.current };
+    };
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && pinch) {
+        e.preventDefault();
+        setZoom(clampZoom(pinch.zoom * (twoFingerDist(e.touches) / pinch.dist)));
+      }
+    };
+    const onTouchEnd = (e) => { if (e.touches.length < 2) pinch = null; };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+    // Re-attach when the plan image appears/changes (the scroll node mounts then).
+  }, [floor.plan_url]);
 
   const savedW = floor.width || 0;
   const savedL = floor.length || 0;
@@ -197,7 +237,7 @@ export default function FloorPlanSection({ floor, points }) {
             </div>
           )}
           <div className="relative">
-            <div className={`w-full rounded-lg border border-border bg-muted/30 ${zoom > 1 ? "overflow-auto max-h-[75vh]" : "overflow-hidden"}`}>
+            <div ref={scrollRef} className={`w-full rounded-lg border border-border bg-muted/30 ${zoom > 1 ? "overflow-auto max-h-[75vh]" : "overflow-hidden"}`}>
               <div
                 ref={containerRef}
                 onClick={onPlanClick}
@@ -292,7 +332,7 @@ export default function FloorPlanSection({ floor, points }) {
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist · usa +/− para acercar el plano (el pin no cambia de tamaño). Los pines se guardan solos.</span>
+            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist · acerca el plano con +/−, Ctrl+rueda o pellizco (el pin no cambia de tamaño). Los pines se guardan solos.</span>
             {savedW > 0 && savedL > 0 && (
               <span>Medidas: {savedW} × {savedL} m · {Math.round(savedW * savedL)} m²</span>
             )}

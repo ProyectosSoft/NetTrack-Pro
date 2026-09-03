@@ -23,11 +23,14 @@ import {
   DEFAULT_CONFIG,
   SHEET_PRESETS,
   LABEL_FIELDS,
+  DEVICE_LABELS,
   computeLayout,
   buildLabelLines,
   expandPoints,
   sanitizeConfig,
+  resolveTextColor,
 } from "@/lib/labelLayout";
+import { glyphDataUrl } from "@/lib/deviceGlyphs";
 import { downloadLabelsPdf, printLabelsPdf } from "@/lib/exportLabelsPdf";
 
 // pt -> mm, used to keep preview font sizes proportional to the PDF output.
@@ -103,6 +106,13 @@ function SheetPreview({ config, points, maps }) {
           const cell = layout.cells[i];
           const { name, meta } = buildLabelLines(pt, config, maps);
           const pad = Math.min(config.padding, layout.labelW / 2 - 0.5, layout.labelH / 2 - 0.5);
+          const color = resolveTextColor(pt, config);
+          const nameFontPx = mm(config.nameFontSize / PT_PER_MM);
+          const iconPx = nameFontPx * 1.15;
+          const justify = config.align === "left" ? "flex-start" : config.align === "right" ? "flex-end" : "center";
+          const icon = config.showIcon ? (
+            <img src={glyphDataUrl(pt.device_type, color)} alt="" style={{ width: iconPx, height: iconPx, flexShrink: 0 }} />
+          ) : null;
           return (
             <div
               key={i}
@@ -117,18 +127,24 @@ function SheetPreview({ config, points, maps }) {
                 border: config.showBorder ? `${Math.max(1, mm(config.borderWidth))}px solid ${config.borderColor}` : "none",
                 borderRadius: mm(config.cornerRadius),
                 textAlign: config.align,
-                color: config.textColor,
+                color,
                 lineHeight: 1.15,
               }}
             >
               <div
                 style={{
-                  fontSize: mm(config.nameFontSize / PT_PER_MM),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: justify,
+                  gap: mm(1),
+                  fontSize: nameFontPx,
                   fontWeight: config.bold ? 700 : 400,
-                  wordBreak: "break-word",
+                  lineHeight: 1.1,
                 }}
               >
-                {name}
+                {config.iconPosition === "start" && icon}
+                <span style={{ wordBreak: "break-word" }}>{name}</span>
+                {config.iconPosition === "end" && icon}
               </div>
               {meta.length > 0 && (
                 <div
@@ -182,6 +198,7 @@ export default function Labels() {
 
   const set = (patch) => setConfig((c) => ({ ...c, ...patch }));
   const setField = (key, val) => setConfig((c) => ({ ...c, fields: { ...c.fields, [key]: val } }));
+  const setDeviceColor = (type, val) => setConfig((c) => ({ ...c, deviceColors: { ...c.deviceColors, [type]: val } }));
 
   const activeTemplate = useMemo(
     () => labelTemplates.find((t) => t.id === activeTemplateId) || null,
@@ -529,6 +546,46 @@ export default function Labels() {
                   <Checkbox checked={config.bold} onCheckedChange={(v) => set({ bold: !!v })} />
                   <span className="text-sm">Nombre en negrita</span>
                 </label>
+
+                {/* Per-device text colour */}
+                <div className="pt-1 border-t border-border">
+                  <label className="flex items-center gap-2 cursor-pointer pt-3">
+                    <Checkbox checked={config.colorByDevice} onCheckedChange={(v) => set({ colorByDevice: !!v })} />
+                    <span className="text-sm">Color de letra según el tipo de dispositivo</span>
+                  </label>
+                  {config.colorByDevice && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                      {Object.keys(DEVICE_LABELS).map((type) => (
+                        <ColorField
+                          key={type}
+                          label={DEVICE_LABELS[type]}
+                          value={config.deviceColors?.[type] || "#000000"}
+                          onChange={(v) => setDeviceColor(type, v)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Device-type icon */}
+                <div className="pt-1 border-t border-border">
+                  <label className="flex items-center gap-2 cursor-pointer pt-3">
+                    <Checkbox checked={config.showIcon} onCheckedChange={(v) => set({ showIcon: !!v })} />
+                    <span className="text-sm">Agregar el ícono del tipo de dispositivo</span>
+                  </label>
+                  {config.showIcon && (
+                    <div className="mt-3 space-y-1">
+                      <Label className="text-xs text-muted-foreground">Posición del ícono</Label>
+                      <Select value={config.iconPosition} onValueChange={(v) => set({ iconPosition: v })}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="start">Al inicio (antes del nombre)</SelectItem>
+                          <SelectItem value="end">Al final (después del nombre)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </TabsContent>
 
               {/* Campos */}
