@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
@@ -10,6 +11,13 @@ import ScrollToTop from './components/ScrollToTop';
 import AppLayout from './components/layout/AppLayout';
 import { useTemplates } from './lib/queries';
 import { ProjectProvider } from './lib/ProjectContext';
+
+// Persist the react-query cache to localStorage so data stays readable offline
+// after the first load (the PWA already precaches the app shell).
+const persister = createSyncStoragePersister({
+  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  key: 'nettrack.query-cache',
+});
 
 // Route-level code splitting: each page loads on demand instead of shipping
 // in the initial bundle.
@@ -67,13 +75,16 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
+        <PersistQueryClientProvider
+          client={queryClientInstance}
+          persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: 'v1' }}
+        >
           <Router basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <ScrollToTop />
             <AppRoutes />
           </Router>
           <Toaster />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
