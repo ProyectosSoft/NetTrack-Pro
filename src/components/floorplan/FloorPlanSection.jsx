@@ -132,7 +132,7 @@ export default function FloorPlanSection({ floor, points }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-border p-4 md:p-5 space-y-4">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-heading font-semibold text-sm flex items-center gap-2">
           <Map className="w-4 h-4 text-primary" /> Plano del piso

@@ -144,7 +144,7 @@ export default function Templates() {
       </div>
 
       {templates.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-8 text-center">
+        <div className="bg-card rounded-xl border border-border p-8 text-center">
           <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground mb-4">No hay plantillas. ¿Crear las plantillas por defecto?</p>
           <Button onClick={seedDefaults} disabled={saving} size="sm">
@@ -158,7 +158,7 @@ export default function Templates() {
             const Icon = DEVICE_ICONS[tpl.device_type] || Cable;
             const totalItems = (tpl.activities?.length || 0) + (tpl.accessories?.length || 0) + (tpl.equipment?.length || 0) + (tpl.custom_checks?.filter((c) => c.enabled !== false).length || 0);
             return (
-              <div key={tpl.id} className="bg-white rounded-xl border border-border overflow-hidden">
+              <div key={tpl.id} className="bg-card rounded-xl border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">

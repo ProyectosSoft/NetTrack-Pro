@@ -323,7 +323,7 @@ export default function Labels() {
         {/* Left: selection + customization */}
         <div className="space-y-6">
           {/* Label templates */}
-          <div className="bg-white rounded-xl border border-border p-4">
+          <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-sm flex items-center gap-2">
                 <BookMarked className="w-4 h-4 text-primary" /> Plantillas de rótulos
@@ -375,7 +375,7 @@ export default function Labels() {
           </div>
 
           {/* Point selection */}
-          <div className="bg-white rounded-xl border border-border">
+          <div className="bg-card rounded-xl border border-border">
             <div className="px-4 py-3 border-b border-border flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-40">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -423,7 +423,7 @@ export default function Labels() {
           </div>
 
           {/* Customization */}
-          <div className="bg-white rounded-xl border border-border p-4">
+          <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-sm">Personalización</h2>
               <button onClick={() => setConfig(DEFAULT_CONFIG)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">

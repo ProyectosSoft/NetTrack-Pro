@@ -214,7 +214,7 @@ export default function Dashboard() {
       {/* Charts row */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Floor / Space progress bars */}
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-card rounded-xl border border-border p-5">
           <h3 className="font-heading font-semibold text-sm mb-4">
             {filterFloor !== "all" ? "Avance por espacio" : "Avance por piso"}
           </h3>
@@ -252,7 +252,7 @@ export default function Dashboard() {
         </div>
 
         {/* Status pie */}
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-card rounded-xl border border-border p-5">
           <h3 className="font-heading font-semibold text-sm mb-4">Distribución por estado</h3>
           {statusPieData.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No hay datos aún</p>
@@ -274,7 +274,7 @@ export default function Dashboard() {
       </div>
 
       {/* Phase progress */}
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-heading font-semibold text-sm mb-4">Avance por fase</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <PhaseCard label="Fase Piso" dot="bg-blue-500" data={phaseProgress.piso} />
@@ -283,7 +283,7 @@ export default function Dashboard() {
       </div>
 
       {/* Device type progress */}
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-heading font-semibold text-sm mb-4">Avance por tipo de dispositivo</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {deviceData.map((d) => (
@@ -301,7 +301,7 @@ export default function Dashboard() {
       </div>
 
       {/* Incomplete points */}
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-4">
           <ListTodo className="w-4 h-4 text-muted-foreground" />
           <h3 className="font-heading font-semibold text-sm">Puntos por completar</h3>
@@ -354,7 +354,7 @@ function PhaseCard({ label, dot, data }) {
 
 function KpiCard({ icon, label, value, sub, color }) {
   return (
-    <div className="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+    <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
       <div className={`flex items-center justify-center rounded-xl w-11 h-11 flex-shrink-0 ${color || ""}`}>
         {icon}
       </div>

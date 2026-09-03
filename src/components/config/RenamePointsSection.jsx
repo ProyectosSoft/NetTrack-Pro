@@ -151,7 +151,7 @@ export default function RenamePointsSection() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Wand2 className="w-4.5 h-4.5 text-primary" />
@@ -169,7 +169,7 @@ export default function RenamePointsSection() {
       </div>
 
       {/* Editable space codes */}
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-heading font-semibold text-sm mb-1">Códigos de espacio</h3>
         <p className="text-xs text-muted-foreground mb-4">
           Sugeridos automáticamente. Corrige cualquiera antes de aplicar (ej: Sala de Experiencia → EXP).
@@ -190,7 +190,7 @@ export default function RenamePointsSection() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         {warnings.length > 0 && (
           <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
             <div className="flex items-center gap-1.5 text-amber-700 text-xs font-medium mb-1">
@@ -222,7 +222,7 @@ export default function RenamePointsSection() {
       </div>
 
       {visibleRows.length > 0 && (
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-card rounded-xl border border-border p-5">
           <h3 className="font-heading font-semibold text-sm mb-3">Vista previa</h3>
           <div className="max-h-[420px] overflow-y-auto divide-y divide-border text-sm">
             {visibleRows.map((r) => (

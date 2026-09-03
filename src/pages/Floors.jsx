@@ -113,7 +113,7 @@ export default function Floors() {
       </div>
 
       {!activeProjectId ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">Selecciona o crea un proyecto para gestionar sus pisos.</p>
           <Button asChild variant="outline" size="sm" className="mt-4">
@@ -121,7 +121,7 @@ export default function Floors() {
           </Button>
         </div>
       ) : floors.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">No hay pisos registrados aún</p>
           <Button onClick={() => setDialogOpen(true)} variant="outline" size="sm" className="mt-4">
@@ -140,7 +140,7 @@ export default function Floors() {
               <Link
                 key={f.id}
                 to={`/pisos/${f.id}`}
-                className="block bg-white rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group"
+                className="block bg-card rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

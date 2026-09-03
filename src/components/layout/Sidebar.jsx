@@ -1,8 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Building2, Settings, X, Network, ClipboardList, Tag, FolderKanban } from "lucide-react";
+import { LayoutDashboard, Building2, Settings, X, Network, ClipboardList, Tag, FolderKanban, Package, Images } from "lucide-react";
 import { useProject, useTerms } from "@/lib/ProjectContext";
 import { isModuleHidden } from "@/lib/branding";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const navItems = [
@@ -10,6 +11,8 @@ const navItems = [
   { label: "Proyectos", path: "/proyectos", icon: FolderKanban, termKey: "projects" },
   { label: "Pisos", path: "/pisos", icon: Building2, termKey: "floors" },
   { label: "Puntos", path: "/puntos", icon: Network, module: "puntos", termKey: "points" },
+  { label: "Materiales", path: "/materiales", icon: Package, module: "materiales" },
+  { label: "Evidencia", path: "/evidencia", icon: Images, module: "evidencia" },
   { label: "Rótulos", path: "/rotulos", icon: Tag, module: "rotulos" },
   { label: "Plantillas", path: "/plantillas", icon: ClipboardList, module: "plantillas" },
   { label: "Configuración", path: "/configuracion", icon: Settings },
@@ -27,7 +30,7 @@ export default function Sidebar({ open, onClose }) {
         <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={onClose} />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:z-auto`}
       >
@@ -38,9 +41,12 @@ export default function Sidebar({ open, onClose }) {
             </div>
             <span className="font-heading font-bold text-lg tracking-tight">NetTrack</span>
           </div>
-          <button className="lg:hidden p-1" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button className="lg:hidden p-1" onClick={onClose}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Active project switcher */}

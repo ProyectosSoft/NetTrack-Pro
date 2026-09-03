@@ -203,7 +203,7 @@ export default function FloorDetail() {
       {floor && <FloorPlanSection floor={floor} points={points} />}
 
       {spaces.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
           <p className="text-muted-foreground text-sm">No hay espacios en este piso</p>
           <Button onClick={() => setSpaceDialog(true)} variant="outline" size="sm" className="mt-3"><Plus className="w-4 h-4 mr-1.5" /> Crear espacio</Button>
         </div>
@@ -234,7 +234,7 @@ export default function FloorDetail() {
             const spacePhases = aggregatePhaseProgress(spacePoints);
 
             return (
-              <div key={s.id} className="bg-white rounded-xl border border-border overflow-hidden">
+              <div key={s.id} className="bg-card rounded-xl border border-border overflow-hidden">
                 <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-muted/30">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

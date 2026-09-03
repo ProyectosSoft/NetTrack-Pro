@@ -340,7 +340,7 @@ const PHASE_BADGE = {
 
 function Section({ title, phase, children }) {
   return (
-    <div className="bg-white rounded-xl border border-border p-4 md:p-5">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-5">
       <div className="flex items-center gap-2 mb-3">
         <h3 className="font-heading font-semibold text-sm">{title}</h3>
         {phase && (

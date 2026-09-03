@@ -22,6 +22,8 @@ const Checklist = lazy(() => import('./pages/Checklist'));
 const Configuration = lazy(() => import('./pages/Configuration'));
 const Templates = lazy(() => import('./pages/Templates'));
 const Projects = lazy(() => import('./pages/Projects'));
+const Materials = lazy(() => import('./pages/Materials'));
+const Evidence = lazy(() => import('./pages/Evidence'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -46,6 +48,8 @@ const AppRoutes = () => {
             <Route path="/pisos/:floorId" element={<FloorDetail />} />
             <Route path="/puntos" element={<Points />} />
             <Route path="/rotulos" element={<Labels />} />
+            <Route path="/materiales" element={<Materials />} />
+            <Route path="/evidencia" element={<Evidence />} />
             <Route path="/checklist/:pointId" element={<Checklist />} />
             <Route path="/configuracion" element={<Configuration />} />
             <Route path="/plantillas" element={<Templates />} />

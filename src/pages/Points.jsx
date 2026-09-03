@@ -150,7 +150,7 @@ export default function Points() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Table header */}
         <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2.5 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <button onClick={() => toggleSort("name")} className="col-span-3 flex items-center gap-1 hover:text-foreground transition-colors text-left">Punto <SortIcon k="name" /></button>

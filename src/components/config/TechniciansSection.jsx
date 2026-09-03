@@ -66,7 +66,7 @@ export default function TechniciansSection() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-heading font-semibold text-sm mb-1">Agregar técnico</h3>
         <p className="text-xs text-muted-foreground mb-4">Registra un técnico para asignarlo a puntos de instalación</p>
         <div className="grid sm:grid-cols-3 gap-2">
@@ -88,7 +88,7 @@ export default function TechniciansSection() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-heading font-semibold text-sm mb-3">Técnicos ({techs.length})</h3>
         {techs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">No hay técnicos registrados</p>

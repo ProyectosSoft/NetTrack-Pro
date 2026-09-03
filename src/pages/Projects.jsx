@@ -152,7 +152,7 @@ export default function Projects() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
           <FolderKanban className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">Aún no hay proyectos. Crea el primero para empezar.</p>
           <Button onClick={openNew} variant="outline" size="sm" className="mt-4"><Plus className="w-4 h-4 mr-1.5" /> Crear proyecto</Button>
@@ -163,7 +163,7 @@ export default function Projects() {
             const active = p.id === activeProjectId;
             const st = STATUS[p.status] || STATUS.activo;
             return (
-              <div key={p.id} className={`bg-white rounded-xl border p-4 transition-colors ${active ? "border-primary ring-1 ring-primary/20" : "border-border"}`}>
+              <div key={p.id} className={`bg-card rounded-xl border p-4 transition-colors ${active ? "border-primary ring-1 ring-primary/20" : "border-border"}`}>
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                     {p.logo_url ? <img src={p.logo_url} alt={p.project_name} className="w-full h-full object-cover" loading="lazy" /> : <Building2 className="w-6 h-6 text-muted-foreground" />}
