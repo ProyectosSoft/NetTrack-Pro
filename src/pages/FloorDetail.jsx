@@ -19,8 +19,8 @@ import DeviceIcon from "@/components/shared/DeviceIcon";
 import PhaseChips from "@/components/shared/PhaseChips";
 import PointEditDialog from "@/components/shared/PointEditDialog";
 import FloorPlanSection from "@/components/floorplan/FloorPlanSection";
-import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp, Copy, Layers } from "lucide-react";
-import { cloneSpace } from "@/lib/clone";
+import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp, Copy, Layers, LayoutTemplate, AlertTriangle } from "lucide-react";
+import { cloneSpace, changeSpaceTemplate } from "@/lib/clone";
 import { useToast } from "@/components/ui/use-toast";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, aggregatePhaseProgress } from "@/lib/pointProgress";
@@ -28,6 +28,8 @@ import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
 import { exportFloorPdf } from "@/lib/exportFloorPdf";
 import { useProject } from "@/lib/ProjectContext";
 import { useAuth } from "@/lib/AuthContext";
+
+const DEVICE_LABELS = { ethernet: "Ethernet", camara: "Cámara CCTV", access_point: "AP WiFi" };
 
 export default function FloorDetail() {
   const { floorId } = useParams();
@@ -73,6 +75,32 @@ export default function FloorDetail() {
   const [spaceToDelete, setSpaceToDelete] = useState(null);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [sortMode, setSortMode] = useState("manual");
+
+  // Change the checklist template (device type) for a whole space at once.
+  const [tmplSpace, setTmplSpace] = useState(null);
+  const [tmplDevice, setTmplDevice] = useState("ethernet");
+  const [tmplApplying, setTmplApplying] = useState(false);
+
+  const openChangeTemplate = (s) => {
+    const own = points.filter((p) => p.space_id === s.id);
+    setTmplDevice(own[0]?.device_type || "ethernet");
+    setTmplSpace(s);
+  };
+  const tmplCount = tmplSpace ? points.filter((p) => p.space_id === tmplSpace.id).length : 0;
+  const applyTemplate = () => run(async () => {
+    if (!tmplSpace) return;
+    const own = points.filter((p) => p.space_id === tmplSpace.id);
+    setTmplApplying(true);
+    try {
+      const r = await changeSpaceTemplate(own, tmplDevice);
+      const name = tmplSpace.name;
+      setTmplSpace(null);
+      invalidate();
+      toast({ title: "Plantilla actualizada", description: `${r.points} punto(s) de "${name}" ahora usan la plantilla ${DEVICE_LABELS[tmplDevice]}. Checklist reiniciado a pendiente.` });
+    } finally {
+      setTmplApplying(false);
+    }
+  }, "No se pudo cambiar la plantilla del espacio");
 
   // Bulk point creation
   const [bulkDialog, setBulkDialog] = useState(false);
@@ -252,6 +280,13 @@ export default function FloorDetail() {
                     <div className="hidden sm:block w-28 h-2 bg-muted rounded-full">
                       <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${avgProgress}%` }} />
                     </div>
+                    <button
+                      onClick={() => openChangeTemplate(s)}
+                      className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground"
+                      title="Cambiar la plantilla de todos los puntos del espacio"
+                    >
+                      <LayoutTemplate className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => duplicateSpace(s)}
                       className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground"
@@ -459,6 +494,42 @@ export default function FloorDetail() {
               <Input placeholder="Ej: 1 o 1.2" value={editSpaceOrder} onChange={(e) => setEditSpaceOrder(e.target.value)} inputMode="decimal" />
             </div>
             <Button onClick={saveEditSpace} className="w-full">Guardar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change space template (device type) */}
+      <Dialog open={!!tmplSpace} onOpenChange={(open) => { if (!open && !tmplApplying) setTmplSpace(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Cambiar plantilla del espacio</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Aplica una plantilla a los <strong>{tmplCount}</strong> punto(s) de{" "}
+              <strong>&ldquo;{tmplSpace?.name}&rdquo;</strong>.
+            </p>
+            <div>
+              <Label className="text-xs mb-1.5 block">Plantilla / tipo de dispositivo</Label>
+              <Select value={tmplDevice} onValueChange={setTmplDevice}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ethernet">Ethernet</SelectItem>
+                  <SelectItem value="camara">Cámara CCTV</SelectItem>
+                  <SelectItem value="access_point">AP WiFi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                El checklist de esos puntos se <strong>reiniciará a pendiente</strong> (actividades,
+                accesorios, equipos y puertos). Se conservan el nombre, la descripción, las
+                observaciones, las fotos de evidencia y la ubicación en el plano.
+              </span>
+            </div>
+            <Button onClick={applyTemplate} disabled={tmplApplying || tmplCount === 0} className="w-full">
+              {tmplApplying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Aplicar plantilla {DEVICE_LABELS[tmplDevice]}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

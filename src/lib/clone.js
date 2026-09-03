@@ -43,6 +43,32 @@ export async function cloneSpace(space, points) {
   return { points: own.length };
 }
 
+// Fields reset when a space's checklist template (device type) is changed. Only
+// progress state is cleared — status, every checklist item and the network/port
+// fields go back to pendiente/empty. The point's identity, description,
+// observations, evidence photos and floor-plan pin are intentionally kept.
+export const CHECKLIST_RESET = {
+  status: "pendiente",
+  act_perforacion: false, act_pesca_cable: false, act_ponchado: false,
+  ponchado_type: "na",
+  acc_face_plate: false, acc_tapa_face_plate: false, acc_tornillos: false,
+  acc_patch_cord: false, acc_rotulo: false, acc_protector: false,
+  equipo_instalado: false, equipo_configurado: false, equipo_probado: false,
+  funcionando: false, identificado_rack: false, ponchado_rack: false,
+  custom_checks: {},
+  puerto_patch_panel: "", puerto_switch: "", vlan: "",
+};
+
+// Change the checklist template (device type) of every point in a space, resetting
+// each point's checklist progress to pendiente (the new template has different
+// items). Returns how many points were changed.
+export async function changeSpaceTemplate(spacePoints, deviceType) {
+  for (const p of spacePoints) {
+    await db.entities.InstallationPoint.update(p.id, { device_type: deviceType, ...CHECKLIST_RESET });
+  }
+  return { points: spacePoints.length };
+}
+
 // Clone a floor with all its spaces and points, with progress reset.
 export async function cloneFloor(floor, spaces, points, order) {
   const newFloor = await db.entities.Floor.create({
