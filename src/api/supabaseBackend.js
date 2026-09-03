@@ -65,21 +65,17 @@ export function createSupabaseBackend() {
     Object.entries(TABLES).map(([name, table]) => [name, makeEntity(supabaseStore(client, table))])
   );
 
-  const integrations = {
-    Core: {
-      async UploadFile({ file }) {
-        const safe = (file.name || "file").replace(/[^\w.\-]+/g, "_");
-        const path = `${genId()}-${safe}`;
-        const { error } = await client.storage.from(BUCKET).upload(path, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-        if (error) throw new Error(error.message);
-        const { data } = client.storage.from(BUCKET).getPublicUrl(path);
-        return { file_url: data.publicUrl };
-      },
-    },
+  const uploadFile = async ({ file }) => {
+    const safe = (file.name || "file").replace(/[^\w.\-]+/g, "_");
+    const path = `${genId()}-${safe}`;
+    const { error } = await client.storage.from(BUCKET).upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+    const { data } = client.storage.from(BUCKET).getPublicUrl(path);
+    return { file_url: data.publicUrl };
   };
 
-  return { entities, integrations };
+  return { entities, uploadFile };
 }

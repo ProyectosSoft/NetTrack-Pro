@@ -4,16 +4,17 @@
 //   get(id):  Promise<record | undefined>
 //   put(record): Promise<record>   // upsert by id
 //   remove(id): Promise<void>
-// makeEntity() turns that into the Base44-shaped API the app consumes, so query
-// semantics (ordering, filtering, limiting, merge-on-update) are identical
-// regardless of where the data lives.
+// makeEntity() turns that into the entity API the app consumes (list/filter/get/
+// create/update/delete/deleteMany/importMany), so query semantics (ordering,
+// filtering, limiting, merge-on-update) are identical regardless of where the
+// data lives.
 
 export function genId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `id_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
-// Mimics Base44's "field" / "-field" ordering strings.
+// Orders by a "field" (ascending) or "-field" (descending) string.
 export function sortRecords(records, order) {
   if (!order) return records;
   const desc = order.startsWith("-");
@@ -78,13 +79,3 @@ export function makeEntity(store) {
     },
   };
 }
-
-// No accounts in this build: a single implicit local user.
-export const LOCAL_USER = { id: "local", full_name: "Usuario local", email: "" };
-
-export const authStub = {
-  me: async () => LOCAL_USER,
-  isAuthenticated: () => true,
-  logout: () => {},
-  redirectToLogin: () => {},
-};

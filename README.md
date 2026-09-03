@@ -57,7 +57,7 @@ La build para Pages calcula el `base` (`/<repo>/`) **automáticamente** a partir
 
 ## Estructura
 
-- `src/api/base44Client.js`: capa de datos local (IndexedDB) con la API `entities.*`, `integrations.Core.UploadFile` y `auth` (stub sin login).
+- `src/api/db.js`: capa de datos (`db.entities.*` CRUD + `db.uploadFile`), respaldada por Supabase o IndexedDB según la configuración.
 - `src/lib/queries.js`: hooks de datos con React Query.
 - `src/lib/ProjectContext.jsx`: proyecto activo, alcance de datos, branding y terminología.
 - `src/pages/`, `src/components/`: UI.

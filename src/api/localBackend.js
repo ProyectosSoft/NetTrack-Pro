@@ -87,12 +87,6 @@ function fileToDataUrl(file) {
 
 export function createLocalBackend() {
   const entities = Object.fromEntries(STORES.map((s) => [s, makeEntity(idbStore(s))]));
-  const integrations = {
-    Core: {
-      async UploadFile({ file }) {
-        return { file_url: await fileToDataUrl(file) };
-      },
-    },
-  };
-  return { entities, integrations };
+  const uploadFile = async ({ file }) => ({ file_url: await fileToDataUrl(file) });
+  return { entities, uploadFile };
 }

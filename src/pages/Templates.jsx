@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,7 +61,7 @@ export default function Templates() {
     setSaving(true);
     const ok = await run(async () => {
       const { id, created_date, updated_date, created_by_id, ...data } = editTpl;
-      await base44.entities.ChecklistTemplate.update(editTpl.id, data);
+      await db.entities.ChecklistTemplate.update(editTpl.id, data);
       return true;
     });
     setSaving(false);
@@ -74,7 +74,7 @@ export default function Templates() {
 
   const deleteTemplate = () => run(async () => {
     if (!deleteTarget) return;
-    await base44.entities.ChecklistTemplate.delete(deleteTarget.id);
+    await db.entities.ChecklistTemplate.delete(deleteTarget.id);
     toast({ title: "Plantilla eliminada" });
     setDeleteTarget(null);
     invalidate();
@@ -83,7 +83,7 @@ export default function Templates() {
   const createTemplate = () => run(async () => {
     if (!newName.trim()) return;
     const defaults = DEFAULT_TEMPLATES[newType];
-    await base44.entities.ChecklistTemplate.create({
+    await db.entities.ChecklistTemplate.create({
       name: newName.trim(),
       device_type: newType,
       activities: defaults.activities,
@@ -103,7 +103,7 @@ export default function Templates() {
     setSaving(true);
     const ok = await run(async () => {
       for (const [type, tpl] of Object.entries(DEFAULT_TEMPLATES)) {
-        await base44.entities.ChecklistTemplate.create({
+        await db.entities.ChecklistTemplate.create({
           name: tpl.label,
           device_type: type,
           activities: tpl.activities,

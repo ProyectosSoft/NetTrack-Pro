@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 // Static defaults (used as fallback before DB loads)
 export const DEFAULT_TEMPLATES = {
@@ -75,7 +75,7 @@ export function setCachedTemplates(templates) {
 
 export async function loadTemplatesFromDB() {
   try {
-    const templates = await base44.entities.ChecklistTemplate.list("-created_date", 50);
+    const templates = await db.entities.ChecklistTemplate.list("-created_date", 50);
     if (templates && templates.length > 0) {
       setCachedTemplates(templates);
     }

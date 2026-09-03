@@ -3,10 +3,9 @@ name: Deploy to GitHub Pages
 # Builds the Vite frontend and publishes it to GitHub Pages.
 # Requires (repo Settings):
 #   - Pages source set to "GitHub Actions"
-#   - Variables VITE_BASE44_APP_ID and VITE_BASE44_APP_BASE_URL pointing at the
-#     hosted Base44 backend (Settings → Secrets and variables → Actions → Variables)
-# Note: the published site still needs Base44 to allow the *.github.io origin
-# (CORS + login) for data and authentication to work.
+#   - Variables VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for the shared
+#     database (Settings → Secrets and variables → Actions → Variables).
+#     Without them the site falls back to per-device local storage.
 
 on:
   push:

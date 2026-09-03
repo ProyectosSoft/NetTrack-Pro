@@ -26,8 +26,6 @@ const base = resolveBase();
 export default defineConfig({
   base,
   resolve: {
-    // The "@" -> src alias was provided by the Base44 plugin; declare it here
-    // now that the app is backend-free.
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   plugins: [

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useInvalidateData } from "@/lib/queries";
 import { useAction } from "@/lib/useAction";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -58,7 +58,7 @@ export default function PointEditDialog({ point, floors = [], spaces = [], onClo
     if (!name.trim() || !spaceId || saving) return;
     setSaving(true);
     const ok = await run(async () => {
-      await base44.entities.InstallationPoint.update(point.id, {
+      await db.entities.InstallationPoint.update(point.id, {
         name: name.trim(),
         device_type: deviceType,
         description: description.trim(),

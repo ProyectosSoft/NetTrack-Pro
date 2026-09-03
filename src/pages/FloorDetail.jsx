@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useParams, Link } from "react-router-dom";
 import { useFloor, useFloors, useSpaces, useSpacesByFloor, usePointsByFloor, useInvalidateData } from "@/lib/queries";
 import { useAction } from "@/lib/useAction";
@@ -69,14 +69,14 @@ export default function FloorDetail() {
 
   const saveFloorName = () => run(async () => {
     if (!floorEditVal.trim()) return;
-    await base44.entities.Floor.update(floorId, { name: floorEditVal.trim() });
+    await db.entities.Floor.update(floorId, { name: floorEditVal.trim() });
     setEditFloorName(false);
     invalidate();
   });
 
   const saveEditSpace = () => run(async () => {
     if (!editSpaceName.trim()) return;
-    await base44.entities.Space.update(editSpace.id, {
+    await db.entities.Space.update(editSpace.id, {
       name: editSpaceName.trim(), space_type: editSpaceType, order: parseOrder(editSpaceOrder),
     });
     setEditSpace(null);
@@ -94,7 +94,7 @@ export default function FloorDetail() {
 
   const addSpace = () => run(async () => {
     if (!spaceName.trim()) return;
-    await base44.entities.Space.create({
+    await db.entities.Space.create({
       name: spaceName.trim(), floor_id: floorId, space_type: spaceType, order: parseOrder(spaceOrder),
     });
     setSpaceName("");
@@ -105,7 +105,7 @@ export default function FloorDetail() {
 
   const addPoint = () => run(async () => {
     if (!pointName.trim() || !selectedSpace) return;
-    await base44.entities.InstallationPoint.create({
+    await db.entities.InstallationPoint.create({
       name: pointName.trim(), floor_id: floorId, space_id: selectedSpace, device_type: deviceType,
       description: pointDesc.trim(), order: parseOrder(pointOrder),
     });
@@ -118,14 +118,14 @@ export default function FloorDetail() {
 
   const confirmDeleteSpace = () => run(async () => {
     const id = spaceToDelete.id;
-    await base44.entities.InstallationPoint.deleteMany({ space_id: id });
-    await base44.entities.Space.delete(id);
+    await db.entities.InstallationPoint.deleteMany({ space_id: id });
+    await db.entities.Space.delete(id);
     setSpaceToDelete(null);
     invalidate();
   });
 
   const confirmDeletePoint = () => run(async () => {
-    await base44.entities.InstallationPoint.delete(pointToDelete.id);
+    await db.entities.InstallationPoint.delete(pointToDelete.id);
     setPointToDelete(null);
     invalidate();
   });

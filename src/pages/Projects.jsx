@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useProjects, useFloors, useSpaces, usePoints, useInvalidateData } from "@/lib/queries";
 import { useProject } from "@/lib/ProjectContext";
 import { useAction } from "@/lib/useAction";
@@ -80,7 +80,7 @@ export default function Projects() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.uploadFile({ file });
       set({ logo_url: file_url });
     } finally {
       setUploading(false);
@@ -96,10 +96,10 @@ export default function Projects() {
     const payload = { ...form, project_name: form.project_name.trim() };
     const ok = await run(async () => {
       if (editing) {
-        await base44.entities.ProjectInfo.update(editing.id, payload);
+        await db.entities.ProjectInfo.update(editing.id, payload);
         return editing.id;
       }
-      const created = await base44.entities.ProjectInfo.create(payload);
+      const created = await db.entities.ProjectInfo.create(payload);
       return created.id;
     });
     setSaving(false);
@@ -116,13 +116,13 @@ export default function Projects() {
     const projFloors = floors.filter((f) => f.project_id === proj.id);
     for (const f of projFloors) {
       for (const s of spaces.filter((sp) => sp.floor_id === f.id)) {
-        await base44.entities.InstallationPoint.deleteMany({ space_id: s.id });
-        await base44.entities.Space.delete(s.id);
+        await db.entities.InstallationPoint.deleteMany({ space_id: s.id });
+        await db.entities.Space.delete(s.id);
       }
-      await base44.entities.InstallationPoint.deleteMany({ floor_id: f.id });
-      await base44.entities.Floor.delete(f.id);
+      await db.entities.InstallationPoint.deleteMany({ floor_id: f.id });
+      await db.entities.Floor.delete(f.id);
     }
-    await base44.entities.ProjectInfo.delete(proj.id);
+    await db.entities.ProjectInfo.delete(proj.id);
     if (activeProjectId === proj.id) setActiveProjectId(null);
     setDeleteTarget(null);
     toast({ title: "Proyecto eliminado" });

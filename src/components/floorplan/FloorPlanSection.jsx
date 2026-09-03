@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useNavigate } from "react-router-dom";
 import { useInvalidateData } from "@/lib/queries";
 import { useAction } from "@/lib/useAction";
@@ -54,8 +54,8 @@ export default function FloorPlanSection({ floor, points }) {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.Floor.update(floor.id, { plan_url: file_url });
+      const { file_url } = await db.uploadFile({ file });
+      await db.entities.Floor.update(floor.id, { plan_url: file_url });
       invalidate();
     } finally {
       setUploading(false);
@@ -63,7 +63,7 @@ export default function FloorPlanSection({ floor, points }) {
   });
 
   const removePlan = () => run(async () => {
-    await base44.entities.Floor.update(floor.id, { plan_url: "" });
+    await db.entities.Floor.update(floor.id, { plan_url: "" });
     invalidate();
   });
 
@@ -72,7 +72,7 @@ export default function FloorPlanSection({ floor, points }) {
     const length = parseMeters(l);
     setSavingDims(true);
     const ok = await run(async () => {
-      await base44.entities.Floor.update(floor.id, { width, length });
+      await db.entities.Floor.update(floor.id, { width, length });
       return true;
     }, "No se pudieron guardar las medidas");
     setSavingDims(false);
@@ -93,7 +93,7 @@ export default function FloorPlanSection({ floor, points }) {
   };
 
   const savePos = (id, x, y) => run(async () => {
-    await base44.entities.InstallationPoint.update(id, { plan_x: x, plan_y: y });
+    await db.entities.InstallationPoint.update(id, { plan_x: x, plan_y: y });
     invalidate();
   });
 

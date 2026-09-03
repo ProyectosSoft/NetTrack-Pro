@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +63,7 @@ export default function Checklist() {
     setSaving(true);
     const ok = await run(async () => {
       const { id, created_date, updated_date, created_by_id, ...data } = form;
-      await base44.entities.InstallationPoint.update(pointId, data);
+      await db.entities.InstallationPoint.update(pointId, data);
       return true;
     });
     setSaving(false);
@@ -83,7 +83,7 @@ export default function Checklist() {
   const uploadPhoto = (e) => run(async () => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.uploadFile({ file });
     update("evidencia", [...(form.evidencia || []), file_url]);
   });
 

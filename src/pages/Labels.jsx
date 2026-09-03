@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useLabelTemplates, useTemplates, useInvalidateData } from "@/lib/queries";
 import { useScopedData } from "@/lib/ProjectContext";
 import { getTemplate } from "@/lib/checklistTemplates";
@@ -203,7 +203,7 @@ export default function Labels() {
     if (!saveName.trim()) return;
     setSaving(true);
     const created = await run(async () =>
-      base44.entities.LabelTemplate.create({ name: saveName.trim(), config: sanitizeConfig(config) })
+      db.entities.LabelTemplate.create({ name: saveName.trim(), config: sanitizeConfig(config) })
     );
     setSaving(false);
     if (created) {
@@ -218,7 +218,7 @@ export default function Labels() {
     if (!activeTemplate) return;
     setSaving(true);
     const ok = await run(async () => {
-      await base44.entities.LabelTemplate.update(activeTemplate.id, {
+      await db.entities.LabelTemplate.update(activeTemplate.id, {
         name: saveName.trim() || activeTemplate.name,
         config: sanitizeConfig(config),
       });
@@ -234,7 +234,7 @@ export default function Labels() {
 
   const renameTemplate = () => run(async () => {
     if (!renameTarget?.name.trim()) return;
-    await base44.entities.LabelTemplate.update(renameTarget.id, { name: renameTarget.name.trim() });
+    await db.entities.LabelTemplate.update(renameTarget.id, { name: renameTarget.name.trim() });
     setRenameTarget(null);
     toast({ title: "Plantilla renombrada" });
     invalidate();
@@ -242,7 +242,7 @@ export default function Labels() {
 
   const deleteTemplate = () => run(async () => {
     if (!deleteTarget) return;
-    await base44.entities.LabelTemplate.delete(deleteTarget.id);
+    await db.entities.LabelTemplate.delete(deleteTarget.id);
     if (activeTemplateId === deleteTarget.id) setActiveTemplateId(null);
     setDeleteTarget(null);
     toast({ title: "Plantilla eliminada" });

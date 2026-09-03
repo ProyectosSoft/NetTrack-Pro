@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Link } from "react-router-dom";
 import { useInvalidateData } from "@/lib/queries";
 import { useScopedData, useTerms } from "@/lib/ProjectContext";
@@ -49,7 +49,7 @@ export default function Points() {
   };
 
   const confirmDeletePoint = () => run(async () => {
-    await base44.entities.InstallationPoint.delete(pointToDelete.id);
+    await db.entities.InstallationPoint.delete(pointToDelete.id);
     setPointToDelete(null);
     invalidate();
   });

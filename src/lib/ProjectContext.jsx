@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useProjects, useFloors, useSpaces, usePoints, useInvalidateData } from "@/lib/queries";
 import { applyBrandColor, resolveTerms } from "@/lib/branding";
 
@@ -53,11 +53,11 @@ export function ProjectProvider({ children }) {
       try {
         let targetId = projects[0]?.id;
         if (!targetId) {
-          const created = await base44.entities.ProjectInfo.create({ project_name: "Proyecto principal", status: "activo" });
+          const created = await db.entities.ProjectInfo.create({ project_name: "Proyecto principal", status: "activo" });
           targetId = created.id;
         }
         for (const f of orphans) {
-          await base44.entities.Floor.update(f.id, { project_id: targetId });
+          await db.entities.Floor.update(f.id, { project_id: targetId });
         }
         setActiveProjectId(targetId);
         invalidate();

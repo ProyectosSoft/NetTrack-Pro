@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +29,7 @@ export default function TechniciansSection() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await base44.entities.Technician.create({
+      await db.entities.Technician.create({
         name: name.trim(),
         specialty,
         phone: phone.trim(),
@@ -48,7 +48,7 @@ export default function TechniciansSection() {
 
   const handleDelete = async (id) => {
     try {
-      await base44.entities.Technician.delete(id);
+      await db.entities.Technician.delete(id);
       toast({ title: "Técnico eliminado" });
       invalidate();
     } catch (e) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useInvalidateData } from "@/lib/queries";
 import { useAction } from "@/lib/useAction";
 import { useToast } from "@/components/ui/use-toast";
@@ -90,7 +90,7 @@ export default function PinStyleDialog({ open, onClose, project }) {
     }
     setSaving(true);
     const ok = await run(async () => {
-      await base44.entities.ProjectInfo.update(project.id, {
+      await db.entities.ProjectInfo.update(project.id, {
         pin_color: mode === "fixed" ? color.trim() : "",
         pin_opacity: normalizePinOpacity(opacity),
         pin_border_opacity: normalizePinOpacity(borderOpacity),

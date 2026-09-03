@@ -2,33 +2,34 @@
 
 ## Project Context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+NetTrack Pro is a **backend-free React + Vite single-page app** for tracking
+network installations (projects → floors → spaces → points), published as a
+static site on GitHub Pages. There is no server: data and uploaded images live
+in the browser via **IndexedDB**, or in a shared **Supabase** database + Storage
+when configured. Keep changes focused on the user's request and preserve
+existing project conventions.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
-
-## Base44 References
-
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
-
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
-
-```bash
-npx skills add base44/skills
-```
+Start with `README.md` for local setup, the Supabase connection, and the
+GitHub Pages publish workflow.
 
 ## Key Files
 
-- `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
+- `src/`: application source.
+- `src/api/db.js`: the data client — selects Supabase or IndexedDB at runtime.
+  - `src/api/entityStore.js`: shared entity logic (list/filter/get/create/update/
+    delete/deleteMany/importMany) over a small store interface.
+  - `src/api/supabaseBackend.js`, `src/api/localBackend.js`: the two backends.
+- `src/lib/queries.js`: React Query hooks over `db`.
+- `src/lib/ProjectContext.jsx`: active project, data scoping, branding, terminology.
+- `supabase/schema.sql`: tables, RLS policies and Storage bucket for Supabase.
+- `vite.config.js`: Vite config (`@` → `src` alias, GitHub Pages base, PWA).
+- `.env.local`: local-only Supabase values; never commit secrets.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+- `npm run dev` runs the app locally (no backend needed; uses IndexedDB unless
+  `.env.local` has Supabase values). `npm run build` / `npm run preview` for prod.
+- All data access goes through `db.entities.<Name>` and `db.uploadFile`; reuse
+  that surface rather than importing a backend directly.
+- Run the relevant checks from `package.json` (`npm run lint`, `npm run build`)
+  before finishing code changes.

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -124,7 +124,7 @@ export default function RenamePointsSection() {
     let failed = 0;
     for (const r of changes) {
       try {
-        await base44.entities.InstallationPoint.update(r.id, { name: r.neu });
+        await db.entities.InstallationPoint.update(r.id, { name: r.neu });
       } catch (e) {
         console.error("No se pudo renombrar", r.id, e);
         failed++;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ export default function Floors() {
 
   const saveEditFloor = () => run(async () => {
     if (!editName.trim()) return;
-    await base44.entities.Floor.update(editFloor.id, { name: editName.trim() });
+    await db.entities.Floor.update(editFloor.id, { name: editName.trim() });
     setEditFloor(null);
     setEditName("");
     invalidate();
@@ -43,15 +43,15 @@ export default function Floors() {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= floors.length) return;
     const updates = [];
-    updates.push(base44.entities.Floor.update(floors[index].id, { order: floors[newIndex].order }));
-    updates.push(base44.entities.Floor.update(floors[newIndex].id, { order: floors[index].order }));
+    updates.push(db.entities.Floor.update(floors[index].id, { order: floors[newIndex].order }));
+    updates.push(db.entities.Floor.update(floors[newIndex].id, { order: floors[index].order }));
     await Promise.all(updates);
     invalidate();
   });
 
   const addFloor = () => run(async () => {
     if (!floorName.trim() || !activeProjectId) return;
-    await base44.entities.Floor.create({ name: floorName.trim(), order: floors.length, project_id: activeProjectId });
+    await db.entities.Floor.create({ name: floorName.trim(), order: floors.length, project_id: activeProjectId });
     setFloorName("");
     setDialogOpen(false);
     invalidate();
@@ -61,10 +61,10 @@ export default function Floors() {
     const id = floorToDelete.id;
     const floorSpaces = spaces.filter((s) => s.floor_id === id);
     for (const s of floorSpaces) {
-      await base44.entities.InstallationPoint.deleteMany({ space_id: s.id });
-      await base44.entities.Space.delete(s.id);
+      await db.entities.InstallationPoint.deleteMany({ space_id: s.id });
+      await db.entities.Space.delete(s.id);
     }
-    await base44.entities.Floor.delete(id);
+    await db.entities.Floor.delete(id);
     setFloorToDelete(null);
     invalidate();
   });

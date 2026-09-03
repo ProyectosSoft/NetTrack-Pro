@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useInvalidateData } from "@/lib/queries";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -127,7 +127,7 @@ export default function DataBackupSection() {
     setResult(null);
     try {
       const bundle = {};
-      for (const e of ENTITIES) bundle[e] = await base44.entities[e].list();
+      for (const e of ENTITIES) bundle[e] = await db.entities[e].list();
       const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -157,15 +157,15 @@ export default function DataBackupSection() {
       const counts = {};
 
       if (isCsv) {
-        // A Base44 CSV export = one entity; the user picks which one.
-        counts[singleEntity] = await base44.entities[singleEntity].importMany(csvToRecords(text));
+        // A CSV file = one entity; the user picks which one.
+        counts[singleEntity] = await db.entities[singleEntity].importMany(csvToRecords(text));
       } else {
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) {
-          counts[singleEntity] = await base44.entities[singleEntity].importMany(parsed);
+          counts[singleEntity] = await db.entities[singleEntity].importMany(parsed);
         } else if (parsed && typeof parsed === "object") {
           for (const e of ENTITIES) {
-            if (Array.isArray(parsed[e])) counts[e] = await base44.entities[e].importMany(parsed[e]);
+            if (Array.isArray(parsed[e])) counts[e] = await db.entities[e].importMany(parsed[e]);
           }
           if (Object.keys(counts).length === 0) {
             throw new Error("El JSON no tiene ninguna entidad reconocida (ProjectInfo, Floor, Space, InstallationPoint, ...).");
@@ -193,7 +193,7 @@ export default function DataBackupSection() {
         </div>
         <div>
           <h3 className="font-heading font-semibold text-sm">Datos (respaldo e importación)</h3>
-          <p className="text-xs text-muted-foreground">Exporta un respaldo o carga datos (CSV/JSON), por ejemplo migrados desde Base44.</p>
+          <p className="text-xs text-muted-foreground">Exporta un respaldo de todos los datos o importa desde un archivo CSV/JSON.</p>
         </div>
       </div>
 
@@ -207,7 +207,7 @@ export default function DataBackupSection() {
       </div>
 
       <div className="border-t border-border pt-4 space-y-3">
-        <p className="text-sm font-medium">Importar (CSV de Base44 o JSON)</p>
+        <p className="text-sm font-medium">Importar (CSV o JSON)</p>
         <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg p-2.5">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>La importación <strong>sobrescribe por ID</strong>: si un registro ya existe con el mismo ID, se reemplaza. Los IDs originales se conservan para no romper las relaciones. Corrige acentos y tipos automáticamente.</span>
