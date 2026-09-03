@@ -30,7 +30,7 @@ import {
   sanitizeConfig,
   resolveTextColor,
 } from "@/lib/labelLayout";
-import { glyphDataUrl } from "@/lib/deviceGlyphs";
+import { DEVICE_GLYPHS } from "@/lib/deviceGlyphs";
 import { downloadLabelsPdf, printLabelsPdf } from "@/lib/exportLabelsPdf";
 
 // pt -> mm, used to keep preview font sizes proportional to the PDF output.
@@ -108,10 +108,17 @@ function SheetPreview({ config, points, maps }) {
           const pad = Math.min(config.padding, layout.labelW / 2 - 0.5, layout.labelH / 2 - 0.5);
           const color = resolveTextColor(pt, config);
           const nameFontPx = mm(config.nameFontSize / PT_PER_MM);
-          const iconPx = nameFontPx * 1.15;
+          const iconPx = Math.max(10, nameFontPx * 1.25);
           const justify = config.align === "left" ? "flex-start" : config.align === "right" ? "flex-end" : "center";
+          const glyphInner = DEVICE_GLYPHS[pt.device_type] || DEVICE_GLYPHS.ethernet;
           const icon = config.showIcon ? (
-            <img src={glyphDataUrl(pt.device_type, color)} alt="" style={{ width: iconPx, height: iconPx, flexShrink: 0 }} />
+            <span
+              aria-hidden="true"
+              style={{ display: "inline-flex", width: iconPx, height: iconPx, flexShrink: 0, color }}
+              dangerouslySetInnerHTML={{
+                __html: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyphInner}</svg>`,
+              }}
+            />
           ) : null;
           return (
             <div
