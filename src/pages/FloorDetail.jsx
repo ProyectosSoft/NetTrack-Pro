@@ -14,12 +14,14 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import StatusBadge from "@/components/shared/StatusBadge";
+import QuickStatusSelect from "@/components/shared/QuickStatusSelect";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import PhaseChips from "@/components/shared/PhaseChips";
 import PointEditDialog from "@/components/shared/PointEditDialog";
 import FloorPlanSection from "@/components/floorplan/FloorPlanSection";
-import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp, Copy, Layers } from "lucide-react";
+import { cloneSpace } from "@/lib/clone";
+import { useToast } from "@/components/ui/use-toast";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, aggregatePhaseProgress } from "@/lib/pointProgress";
 import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
@@ -42,8 +44,15 @@ export default function FloorDetail() {
   const isError = floorQ.isError || spacesQ.isError || pointsQ.isError;
   const invalidate = useInvalidateData();
   const run = useAction();
+  const { toast } = useToast();
   const { activeProject } = useProject();
   const { user } = useAuth();
+
+  const duplicateSpace = (s) => run(async () => {
+    const r = await cloneSpace(s, points);
+    invalidate();
+    toast({ title: "Espacio duplicado", description: `"${s.name} (copia)" con ${r.points} puntos (estado pendiente).` });
+  }, "No se pudo duplicar el espacio");
   const [spaceDialog, setSpaceDialog] = useState(false);
   const [pointDialog, setPointDialog] = useState(false);
   const [spaceName, setSpaceName] = useState("");
@@ -64,6 +73,35 @@ export default function FloorDetail() {
   const [spaceToDelete, setSpaceToDelete] = useState(null);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [sortMode, setSortMode] = useState("manual");
+
+  // Bulk point creation
+  const [bulkDialog, setBulkDialog] = useState(false);
+  const [bulkSpace, setBulkSpace] = useState(null);
+  const [bulkType, setBulkType] = useState("ethernet");
+  const [bulkPrefix, setBulkPrefix] = useState("");
+  const [bulkStart, setBulkStart] = useState("1");
+  const [bulkCount, setBulkCount] = useState("3");
+
+  const bulkNames = () => {
+    const start = parseInt(bulkStart, 10) || 1;
+    const count = Math.max(0, Math.min(100, parseInt(bulkCount, 10) || 0));
+    return Array.from({ length: count }, (_, i) => `${bulkPrefix}${start + i}`);
+  };
+
+  const bulkAdd = () => run(async () => {
+    const names = bulkNames();
+    if (!bulkSpace || names.length === 0) return;
+    for (let i = 0; i < names.length; i += 1) {
+      await db.entities.InstallationPoint.create({
+        name: names[i], floor_id: floorId, space_id: bulkSpace,
+        device_type: bulkType, order: (parseInt(bulkStart, 10) || 1) + i,
+      });
+    }
+    setBulkDialog(false);
+    setBulkPrefix("");
+    invalidate();
+    toast({ title: "Puntos creados", description: `${names.length} puntos agregados.` });
+  }, "No se pudieron crear los puntos");
 
   const exportPdf = () => run(() => exportFloorPdf(floor, sortedSpaces, points, { project: activeProject, user }));
 
@@ -158,6 +196,7 @@ export default function FloorDetail() {
           <Button onClick={exportPdf} size="sm" variant="outline" className="flex-1 sm:flex-none"><Download className="w-4 h-4 mr-1.5" /> Exportar PDF</Button>
           <Button onClick={() => setSpaceDialog(true)} size="sm" variant="outline" className="flex-1 sm:flex-none"><Plus className="w-4 h-4 mr-1.5" /> Espacio</Button>
           <Button onClick={() => setPointDialog(true)} size="sm" className="flex-1 sm:flex-none"><Plus className="w-4 h-4 mr-1.5" /> Punto</Button>
+          <Button onClick={() => { setBulkSpace(selectedSpace || sortedSpaces[0]?.id || null); setBulkDialog(true); }} size="sm" variant="outline" className="flex-1 sm:flex-none" disabled={sortedSpaces.length === 0}><Layers className="w-4 h-4 mr-1.5" /> Varios</Button>
         </div>
       </div>
 
@@ -214,12 +253,20 @@ export default function FloorDetail() {
                       <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${avgProgress}%` }} />
                     </div>
                     <button
+                      onClick={() => duplicateSpace(s)}
+                      className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground"
+                      title="Duplicar espacio con sus puntos"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => openEditSpace(s)}
                       className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground"
+                      title="Editar espacio"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => setSpaceToDelete(s)} className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500">
+                    <button onClick={() => setSpaceToDelete(s)} title="Eliminar espacio" className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -262,7 +309,7 @@ export default function FloorDetail() {
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                        <StatusBadge status={pt.status} />
+                        <QuickStatusSelect point={pt} onChanged={invalidate} />
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                       </Link>
                       );
@@ -328,6 +375,55 @@ export default function FloorDetail() {
               <Input placeholder="Ej: 1 o 1.2" value={pointOrder} onChange={(e) => setPointOrder(e.target.value)} inputMode="decimal" />
             </div>
             <Button onClick={addPoint} className="w-full">Crear punto</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add Points Dialog */}
+      <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Agregar varios puntos</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs mb-1.5 block">Espacio</Label>
+              <Select value={bulkSpace || ""} onValueChange={setBulkSpace}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar espacio" /></SelectTrigger>
+                <SelectContent>
+                  {sortedSpaces.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Tipo de dispositivo</Label>
+              <Select value={bulkType} onValueChange={setBulkType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ethernet">Ethernet</SelectItem>
+                  <SelectItem value="camara">Cámara CCTV</SelectItem>
+                  <SelectItem value="access_point">AP WiFi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Prefijo del nombre</Label>
+              <Input value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} placeholder="Ej: P10-COW-ETH" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1.5 block">N° inicial</Label>
+                <Input value={bulkStart} onChange={(e) => setBulkStart(e.target.value)} inputMode="numeric" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Cantidad</Label>
+                <Input value={bulkCount} onChange={(e) => setBulkCount(e.target.value)} inputMode="numeric" />
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2.5">
+              {bulkNames().length === 0
+                ? "Escribe un prefijo y una cantidad."
+                : <>Se crearán <strong>{bulkNames().length}</strong>: {bulkNames().slice(0, 3).join(", ")}{bulkNames().length > 3 ? `, … ${bulkNames()[bulkNames().length - 1]}` : ""}</>}
+            </div>
+            <Button onClick={bulkAdd} disabled={!bulkSpace || bulkNames().length === 0} className="w-full">Crear {bulkNames().length || ""} puntos</Button>
           </div>
         </DialogContent>
       </Dialog>

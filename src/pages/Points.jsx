@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import StatusBadge from "@/components/shared/StatusBadge";
+import QuickStatusSelect from "@/components/shared/QuickStatusSelect";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import PhaseChips from "@/components/shared/PhaseChips";
 import PointEditDialog from "@/components/shared/PointEditDialog";
@@ -182,7 +182,7 @@ export default function Points() {
                   <div className="col-span-3 text-sm text-muted-foreground">{floorMap[pt.floor_id] || "—"}</div>
                   <div className="col-span-3 text-sm text-muted-foreground">{spaceMap[pt.space_id] || "—"}</div>
                   <div className="col-span-2 flex items-center gap-2">
-                    <StatusBadge status={pt.status} />
+                    <QuickStatusSelect point={pt} onChanged={invalidate} />
                     <span className="text-xs text-muted-foreground font-medium">{progress}%</span>
                   </div>
                   <div className="col-span-1 flex items-center justify-end gap-1">

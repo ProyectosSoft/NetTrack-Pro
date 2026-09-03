@@ -8,13 +8,16 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { Building2, Plus, ChevronRight, Loader2, Trash2, Pencil, ArrowUp, ArrowDown, Download } from "lucide-react";
+import { Building2, Plus, ChevronRight, Loader2, Trash2, Pencil, ArrowUp, ArrowDown, Download, Copy, Table } from "lucide-react";
 import { getPointProgress } from "@/lib/pointProgress";
 import { useInvalidateData } from "@/lib/queries";
 import { useScopedData, useProject, useTerms } from "@/lib/ProjectContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useAction } from "@/lib/useAction";
+import { useToast } from "@/components/ui/use-toast";
 import { exportProjectPdf } from "@/lib/exportFloorPdf";
+import { exportPointsCsv } from "@/lib/exportPointsCsv";
+import { cloneFloor } from "@/lib/clone";
 import DataError from "@/components/shared/DataError";
 
 export default function Floors() {
@@ -24,6 +27,14 @@ export default function Floors() {
   const { user } = useAuth();
   const invalidate = useInvalidateData();
   const run = useAction();
+  const { toast } = useToast();
+
+  const duplicateFloor = (f) => run(async () => {
+    const nextOrder = floors.reduce((m, x) => Math.max(m, x.order ?? 0), 0) + 1;
+    const r = await cloneFloor(f, spaces, points, nextOrder);
+    invalidate();
+    toast({ title: "Piso duplicado", description: `"${f.name} (copia)": ${r.spaces} espacios y ${r.points} puntos (estado pendiente).` });
+  }, "No se pudo duplicar el piso");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [floorName, setFloorName] = useState("");
@@ -87,7 +98,12 @@ export default function Floors() {
         <div className="flex w-full sm:w-auto flex-wrap gap-2">
           {floors.length > 0 && (
             <Button onClick={() => run(() => exportProjectPdf(floors, spaces, points, { project: activeProject, user }))} size="sm" variant="outline" className="flex-1 sm:flex-none">
-              <Download className="w-4 h-4 mr-1.5" /> Exportar proyecto
+              <Download className="w-4 h-4 mr-1.5" /> PDF
+            </Button>
+          )}
+          {points.length > 0 && (
+            <Button onClick={() => run(() => exportPointsCsv(activeProject, floors, spaces, points))} size="sm" variant="outline" className="flex-1 sm:flex-none">
+              <Table className="w-4 h-4 mr-1.5" /> CSV
             </Button>
           )}
           <Button onClick={() => setDialogOpen(true)} size="sm" disabled={!activeProjectId} className="flex-1 sm:flex-none">
@@ -162,7 +178,15 @@ export default function Floors() {
                       </div>
                     </div>
                     <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); duplicateFloor(f); }}
+                      title="Duplicar piso con sus espacios y puntos"
+                      className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditFloor(f); setEditName(f.name); }}
+                      title="Editar piso"
                       className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                     >
                       <Pencil className="w-4 h-4" />
