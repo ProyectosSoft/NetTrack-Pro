@@ -18,12 +18,14 @@ import PointEditDialog from "@/components/shared/PointEditDialog";
 import { Loader2, Search, ChevronRight, Pencil, Trash2, ArrowUp, ArrowDown, ChevronsUpDown, MessageSquareText } from "lucide-react";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, hasObservations } from "@/lib/pointProgress";
+import { useUndoableToast } from "@/lib/UndoContext";
 
 export default function Points() {
   const { floors, spaces, points, isLoading: loading, isError } = useScopedData();
   const terms = useTerms();
   const invalidate = useInvalidateData();
   const run = useAction();
+  const undoToast = useUndoableToast();
   const [search, setSearch] = useState("");
   const [filterFloor, setFilterFloor] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -49,9 +51,16 @@ export default function Points() {
   };
 
   const confirmDeletePoint = () => run(async () => {
-    await db.entities.InstallationPoint.delete(pointToDelete.id);
+    const point = { ...pointToDelete };
+    await db.entities.InstallationPoint.delete(point.id);
     setPointToDelete(null);
     invalidate();
+    undoToast({
+      title: "Punto eliminado",
+      description: `"${point.name}".`,
+      label: "Eliminar punto",
+      run: () => db.entities.InstallationPoint.importMany([point]),
+    });
   });
 
   const floorMap = useMemo(() => Object.fromEntries(floors.map((f) => [f.id, f.name])), [floors]);

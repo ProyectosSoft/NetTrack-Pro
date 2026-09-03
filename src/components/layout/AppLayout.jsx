@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import UndoButton from "@/components/shared/UndoButton";
 import OfflineBanner from "@/components/shared/OfflineBanner";
 import { Menu } from "lucide-react";
 
@@ -18,7 +19,10 @@ export default function AppLayout() {
             <Menu className="w-5 h-5" />
           </button>
           <span className="font-heading font-semibold text-base">NetTrack</span>
-          <ThemeToggle className="ml-auto" />
+          <div className="ml-auto flex items-center gap-1">
+            <UndoButton />
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Outlet />

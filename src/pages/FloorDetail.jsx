@@ -20,8 +20,8 @@ import PhaseChips from "@/components/shared/PhaseChips";
 import PointEditDialog from "@/components/shared/PointEditDialog";
 import FloorPlanSection from "@/components/floorplan/FloorPlanSection";
 import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp, Copy, Layers, LayoutTemplate, AlertTriangle } from "lucide-react";
-import { cloneSpace, changeSpaceTemplate } from "@/lib/clone";
-import { useToast } from "@/components/ui/use-toast";
+import { cloneSpace, changeSpaceTemplate, deleteCreated } from "@/lib/clone";
+import { useUndoableToast } from "@/lib/UndoContext";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, aggregatePhaseProgress } from "@/lib/pointProgress";
 import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
@@ -46,14 +46,19 @@ export default function FloorDetail() {
   const isError = floorQ.isError || spacesQ.isError || pointsQ.isError;
   const invalidate = useInvalidateData();
   const run = useAction();
-  const { toast } = useToast();
+  const undoToast = useUndoableToast();
   const { activeProject } = useProject();
   const { user } = useAuth();
 
   const duplicateSpace = (s) => run(async () => {
     const r = await cloneSpace(s, points);
     invalidate();
-    toast({ title: "Espacio duplicado", description: `"${s.name} (copia)" con ${r.points} puntos (estado pendiente).` });
+    undoToast({
+      title: "Espacio duplicado",
+      description: `"${s.name} (copia)" con ${r.points} puntos (estado pendiente).`,
+      label: "Duplicar espacio",
+      run: () => deleteCreated({ spaceIds: [r.spaceId], pointIds: r.pointIds }),
+    });
   }, "No se pudo duplicar el espacio");
   const [spaceDialog, setSpaceDialog] = useState(false);
   const [pointDialog, setPointDialog] = useState(false);
@@ -90,13 +95,19 @@ export default function FloorDetail() {
   const applyTemplate = () => run(async () => {
     if (!tmplSpace) return;
     const own = points.filter((p) => p.space_id === tmplSpace.id);
+    const snapshot = own.map((p) => ({ ...p })); // capture before reset, for undo
     setTmplApplying(true);
     try {
       const r = await changeSpaceTemplate(own, tmplDevice);
       const name = tmplSpace.name;
       setTmplSpace(null);
       invalidate();
-      toast({ title: "Plantilla actualizada", description: `${r.points} punto(s) de "${name}" ahora usan la plantilla ${DEVICE_LABELS[tmplDevice]}. Checklist reiniciado a pendiente.` });
+      undoToast({
+        title: "Plantilla actualizada",
+        description: `${r.points} punto(s) de "${name}" → ${DEVICE_LABELS[tmplDevice]}. Checklist reiniciado a pendiente.`,
+        label: "Cambiar plantilla",
+        run: () => db.entities.InstallationPoint.importMany(snapshot),
+      });
     } finally {
       setTmplApplying(false);
     }
@@ -119,16 +130,23 @@ export default function FloorDetail() {
   const bulkAdd = () => run(async () => {
     const names = bulkNames();
     if (!bulkSpace || names.length === 0) return;
+    const ids = [];
     for (let i = 0; i < names.length; i += 1) {
-      await db.entities.InstallationPoint.create({
+      const np = await db.entities.InstallationPoint.create({
         name: names[i], floor_id: floorId, space_id: bulkSpace,
         device_type: bulkType, order: (parseInt(bulkStart, 10) || 1) + i,
       });
+      ids.push(np.id);
     }
     setBulkDialog(false);
     setBulkPrefix("");
     invalidate();
-    toast({ title: "Puntos creados", description: `${names.length} puntos agregados.` });
+    undoToast({
+      title: "Puntos creados",
+      description: `${names.length} puntos agregados.`,
+      label: "Crear puntos",
+      run: () => deleteCreated({ pointIds: ids }),
+    });
   }, "No se pudieron crear los puntos");
 
   const exportPdf = () => run(() => exportFloorPdf(floor, sortedSpaces, points, { project: activeProject, user }));
@@ -160,18 +178,24 @@ export default function FloorDetail() {
 
   const addSpace = () => run(async () => {
     if (!spaceName.trim()) return;
-    await db.entities.Space.create({
+    const ns = await db.entities.Space.create({
       name: spaceName.trim(), floor_id: floorId, space_type: spaceType, order: parseOrder(spaceOrder),
     });
     setSpaceName("");
     setSpaceOrder("");
     setSpaceDialog(false);
     invalidate();
+    undoToast({
+      title: "Espacio creado",
+      description: ns.name,
+      label: "Crear espacio",
+      run: () => deleteCreated({ spaceIds: [ns.id] }),
+    });
   });
 
   const addPoint = () => run(async () => {
     if (!pointName.trim() || !selectedSpace) return;
-    await db.entities.InstallationPoint.create({
+    const np = await db.entities.InstallationPoint.create({
       name: pointName.trim(), floor_id: floorId, space_id: selectedSpace, device_type: deviceType,
       description: pointDesc.trim(), order: parseOrder(pointOrder),
     });
@@ -180,20 +204,44 @@ export default function FloorDetail() {
     setPointOrder("");
     setPointDialog(false);
     invalidate();
+    undoToast({
+      title: "Punto creado",
+      description: np.name,
+      label: "Crear punto",
+      run: () => deleteCreated({ pointIds: [np.id] }),
+    });
   });
 
   const confirmDeleteSpace = () => run(async () => {
-    const id = spaceToDelete.id;
+    const space = spaceToDelete;
+    const id = space.id;
+    const own = points.filter((p) => p.space_id === id).map((p) => ({ ...p }));
     await db.entities.InstallationPoint.deleteMany({ space_id: id });
     await db.entities.Space.delete(id);
     setSpaceToDelete(null);
     invalidate();
+    undoToast({
+      title: "Espacio eliminado",
+      description: `"${space.name}"${own.length ? ` y ${own.length} punto(s)` : ""}.`,
+      label: "Eliminar espacio",
+      run: async () => {
+        await db.entities.Space.importMany([space]);
+        if (own.length) await db.entities.InstallationPoint.importMany(own);
+      },
+    });
   });
 
   const confirmDeletePoint = () => run(async () => {
-    await db.entities.InstallationPoint.delete(pointToDelete.id);
+    const point = { ...pointToDelete };
+    await db.entities.InstallationPoint.delete(point.id);
     setPointToDelete(null);
     invalidate();
+    undoToast({
+      title: "Punto eliminado",
+      description: `"${point.name}".`,
+      label: "Eliminar punto",
+      run: () => db.entities.InstallationPoint.importMany([point]),
+    });
   });
 
   if (loading) {

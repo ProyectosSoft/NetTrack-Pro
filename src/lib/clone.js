@@ -28,7 +28,8 @@ function freshPoint(src, floor_id, space_id) {
   };
 }
 
-// Clone a space (within its floor) plus its points, with progress reset.
+// Clone a space (within its floor) plus its points, with progress reset. Returns
+// the ids of everything created so the operation can be undone.
 export async function cloneSpace(space, points) {
   const created = await db.entities.Space.create({
     name: `${space.name} (copia)`,
@@ -37,10 +38,12 @@ export async function cloneSpace(space, points) {
     order: space.order ?? 0,
   });
   const own = points.filter((p) => p.space_id === space.id);
+  const pointIds = [];
   for (const p of own) {
-    await db.entities.InstallationPoint.create(freshPoint(p, space.floor_id, created.id));
+    const np = await db.entities.InstallationPoint.create(freshPoint(p, space.floor_id, created.id));
+    pointIds.push(np.id);
   }
-  return { points: own.length };
+  return { points: own.length, spaceId: created.id, pointIds };
 }
 
 // Fields reset when a space's checklist template (device type) is changed. Only
@@ -80,7 +83,8 @@ export async function cloneFloor(floor, spaces, points, order) {
     plan_url: floor.plan_url || "",
   });
   const floorSpaces = spaces.filter((s) => s.floor_id === floor.id);
-  let count = 0;
+  const spaceIds = [];
+  const pointIds = [];
   for (const s of floorSpaces) {
     const newSpace = await db.entities.Space.create({
       name: s.name,
@@ -88,10 +92,18 @@ export async function cloneFloor(floor, spaces, points, order) {
       space_type: s.space_type || "habitacion",
       order: s.order ?? 0,
     });
+    spaceIds.push(newSpace.id);
     for (const p of points.filter((pt) => pt.space_id === s.id)) {
-      await db.entities.InstallationPoint.create(freshPoint(p, newFloor.id, newSpace.id));
-      count += 1;
+      const np = await db.entities.InstallationPoint.create(freshPoint(p, newFloor.id, newSpace.id));
+      pointIds.push(np.id);
     }
   }
-  return { spaces: floorSpaces.length, points: count };
+  return { spaces: floorSpaces.length, points: pointIds.length, floorId: newFloor.id, spaceIds, pointIds };
+}
+
+// Delete a set of created records (used to undo a clone or bulk create).
+export async function deleteCreated({ floorId, spaceIds = [], pointIds = [] }) {
+  for (const id of pointIds) await db.entities.InstallationPoint.delete(id);
+  for (const id of spaceIds) await db.entities.Space.delete(id);
+  if (floorId) await db.entities.Floor.delete(floorId);
 }

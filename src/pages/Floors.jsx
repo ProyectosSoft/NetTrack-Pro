@@ -14,10 +14,10 @@ import { useInvalidateData } from "@/lib/queries";
 import { useScopedData, useProject, useTerms } from "@/lib/ProjectContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useAction } from "@/lib/useAction";
-import { useToast } from "@/components/ui/use-toast";
 import { exportProjectPdf } from "@/lib/exportFloorPdf";
 import { exportPointsCsv } from "@/lib/exportPointsCsv";
-import { cloneFloor } from "@/lib/clone";
+import { cloneFloor, deleteCreated } from "@/lib/clone";
+import { useUndoableToast } from "@/lib/UndoContext";
 import DataError from "@/components/shared/DataError";
 
 export default function Floors() {
@@ -27,13 +27,18 @@ export default function Floors() {
   const { user } = useAuth();
   const invalidate = useInvalidateData();
   const run = useAction();
-  const { toast } = useToast();
+  const undoToast = useUndoableToast();
 
   const duplicateFloor = (f) => run(async () => {
     const nextOrder = floors.reduce((m, x) => Math.max(m, x.order ?? 0), 0) + 1;
     const r = await cloneFloor(f, spaces, points, nextOrder);
     invalidate();
-    toast({ title: "Piso duplicado", description: `"${f.name} (copia)": ${r.spaces} espacios y ${r.points} puntos (estado pendiente).` });
+    undoToast({
+      title: "Piso duplicado",
+      description: `"${f.name} (copia)": ${r.spaces} espacios y ${r.points} puntos (estado pendiente).`,
+      label: "Duplicar piso",
+      run: () => deleteCreated({ floorId: r.floorId, spaceIds: r.spaceIds, pointIds: r.pointIds }),
+    });
   }, "No se pudo duplicar el piso");
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,15 +67,23 @@ export default function Floors() {
 
   const addFloor = () => run(async () => {
     if (!floorName.trim() || !activeProjectId) return;
-    await db.entities.Floor.create({ name: floorName.trim(), order: floors.length, project_id: activeProjectId });
+    const nf = await db.entities.Floor.create({ name: floorName.trim(), order: floors.length, project_id: activeProjectId });
     setFloorName("");
     setDialogOpen(false);
     invalidate();
+    undoToast({
+      title: "Piso creado",
+      description: nf.name,
+      label: "Crear piso",
+      run: () => deleteCreated({ floorId: nf.id }),
+    });
   });
 
   const confirmDeleteFloor = () => run(async () => {
-    const id = floorToDelete.id;
-    const floorSpaces = spaces.filter((s) => s.floor_id === id);
+    const floor = { ...floorToDelete };
+    const id = floor.id;
+    const floorSpaces = spaces.filter((s) => s.floor_id === id).map((s) => ({ ...s }));
+    const floorPoints = points.filter((p) => p.floor_id === id).map((p) => ({ ...p }));
     for (const s of floorSpaces) {
       await db.entities.InstallationPoint.deleteMany({ space_id: s.id });
       await db.entities.Space.delete(s.id);
@@ -78,6 +91,16 @@ export default function Floors() {
     await db.entities.Floor.delete(id);
     setFloorToDelete(null);
     invalidate();
+    undoToast({
+      title: "Piso eliminado",
+      description: `"${floor.name}"${floorSpaces.length ? ` con ${floorSpaces.length} espacio(s) y ${floorPoints.length} punto(s)` : ""}.`,
+      label: "Eliminar piso",
+      run: async () => {
+        await db.entities.Floor.importMany([floor]);
+        if (floorSpaces.length) await db.entities.Space.importMany(floorSpaces);
+        if (floorPoints.length) await db.entities.InstallationPoint.importMany(floorPoints);
+      },
+    });
   });
 
   if (loading) {

@@ -11,6 +11,7 @@ import ScrollToTop from './components/ScrollToTop';
 import AppLayout from './components/layout/AppLayout';
 import { useTemplates } from './lib/queries';
 import { ProjectProvider } from './lib/ProjectContext';
+import { UndoProvider } from './lib/UndoContext';
 
 // Persist the react-query cache to localStorage so data stays readable offline
 // after the first load (the PWA already precaches the app shell).
@@ -46,6 +47,7 @@ const AppRoutes = () => {
   useTemplates();
 
   return (
+    <UndoProvider>
     <ProjectProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -66,6 +68,7 @@ const AppRoutes = () => {
         </Routes>
       </Suspense>
     </ProjectProvider>
+    </UndoProvider>
   );
 };
 

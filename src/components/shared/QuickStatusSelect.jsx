@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { db } from "@/api/db";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useUndoableToast } from "@/lib/UndoContext";
 
 const STATUS = {
   pendiente: { label: "Pendiente", cls: "bg-slate-100 text-slate-600" },
@@ -14,14 +15,22 @@ const STATUS = {
 // it stops clicks from navigating and updates the point directly.
 export default function QuickStatusSelect({ point, onChanged }) {
   const [saving, setSaving] = useState(false);
+  const undoToast = useUndoableToast();
   const s = STATUS[point.status] || STATUS.pendiente;
 
   const change = async (value) => {
-    if (value === point.status) return;
+    const prev = point.status;
+    if (value === prev) return;
     setSaving(true);
     try {
       await db.entities.InstallationPoint.update(point.id, { status: value });
       onChanged?.();
+      undoToast({
+        title: "Estado actualizado",
+        description: `"${point.name}" → ${(STATUS[value] || {}).label || value}.`,
+        label: "Cambiar estado",
+        run: async () => { await db.entities.InstallationPoint.update(point.id, { status: prev }); onChanged?.(); },
+      });
     } finally {
       setSaving(false);
     }

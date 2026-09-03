@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
+import { useUndoableToast } from "@/lib/UndoContext";
 
 // Edit dialog for an installation point, shared by the floor detail and the
 // points list. Besides the basic fields it can move the point to another space
@@ -18,6 +19,7 @@ import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
 export default function PointEditDialog({ point, floors = [], spaces = [], onClose }) {
   const invalidate = useInvalidateData();
   const run = useAction();
+  const undoToast = useUndoableToast();
   const [name, setName] = useState("");
   const [deviceType, setDeviceType] = useState("ethernet");
   const [description, setDescription] = useState("");
@@ -57,6 +59,7 @@ export default function PointEditDialog({ point, floors = [], spaces = [], onClo
   const save = async () => {
     if (!name.trim() || !spaceId || saving) return;
     setSaving(true);
+    const prev = { ...point };
     const ok = await run(async () => {
       await db.entities.InstallationPoint.update(point.id, {
         name: name.trim(),
@@ -72,6 +75,12 @@ export default function PointEditDialog({ point, floors = [], spaces = [], onClo
     if (ok) {
       onClose();
       invalidate();
+      undoToast({
+        title: "Punto actualizado",
+        description: `"${name.trim()}".`,
+        label: "Editar punto",
+        run: () => db.entities.InstallationPoint.importMany([prev]),
+      });
     }
   };
 

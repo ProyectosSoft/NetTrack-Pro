@@ -4,6 +4,7 @@ import { LayoutDashboard, Building2, Settings, X, Network, ClipboardList, Tag, F
 import { useProject, useTerms } from "@/lib/ProjectContext";
 import { isModuleHidden } from "@/lib/branding";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import UndoButton from "@/components/shared/UndoButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const navItems = [
@@ -42,6 +43,7 @@ export default function Sidebar({ open, onClose }) {
             <span className="font-heading font-bold text-lg tracking-tight">NetTrack</span>
           </div>
           <div className="flex items-center gap-1">
+            <UndoButton />
             <ThemeToggle />
             <button className="lg:hidden p-1" onClick={onClose}>
               <X className="w-5 h-5" />
