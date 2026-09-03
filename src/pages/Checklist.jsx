@@ -11,7 +11,6 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { ArrowLeft, Loader2, Save, Camera, X, Download } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 import { getTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
 import { getPointPhaseProgress, getEquipmentFieldPhase } from "@/lib/pointProgress";
 import { usePoint, useFloors, useSpaces, useTechnicians, useInvalidateData } from "@/lib/queries";
@@ -21,11 +20,12 @@ import { useProject } from "@/lib/ProjectContext";
 import { useAuth } from "@/lib/AuthContext";
 import { sortItems } from "@/lib/ordering";
 import DataError from "@/components/shared/DataError";
+import { useUndoableToast } from "@/lib/UndoContext";
 
 export default function Checklist() {
   const { pointId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const undoToast = useUndoableToast();
   const invalidate = useInvalidateData();
   const run = useAction();
   const { data: point, isLoading, isError } = usePoint(pointId);
@@ -61,6 +61,7 @@ export default function Checklist() {
 
   const save = async () => {
     setSaving(true);
+    const prev = { ...point }; // full pre-save record, for undo
     const ok = await run(async () => {
       const { id, created_date, updated_date, created_by_id, ...data } = form;
       await db.entities.InstallationPoint.update(pointId, data);
@@ -69,7 +70,12 @@ export default function Checklist() {
     setSaving(false);
     if (ok) {
       invalidate();
-      toast({ title: "Guardado", description: "Los cambios se guardaron correctamente." });
+      undoToast({
+        title: "Guardado",
+        description: "Los cambios se guardaron correctamente.",
+        label: "Editar checklist",
+        run: () => db.entities.InstallationPoint.importMany([prev]),
+      });
       navigate(-1);
     }
   };

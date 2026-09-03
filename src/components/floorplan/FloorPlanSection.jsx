@@ -7,7 +7,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Map, Upload, Loader2, X, Ruler, Palette } from "lucide-react";
+import { Map, Upload, Loader2, X, Ruler, Palette, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import PinStyleDialog from "@/components/floorplan/PinStyleDialog";
 import { resolvePinStyle } from "@/lib/branding";
 
@@ -34,12 +34,20 @@ export default function FloorPlanSection({ floor, points }) {
   const [drag, setDrag] = useState(null); // { id, x, y, moved, startX, startY }
   const [w, setW] = useState(floor.width ? String(floor.width) : "");
   const [l, setL] = useState(floor.length ? String(floor.length) : "");
+  const [zoom, setZoom] = useState(1); // plan zoom; pins keep a fixed pixel size
 
   // Re-sync the inputs when the stored dimensions change (save, floor switch).
   useEffect(() => {
     setW(floor.width ? String(floor.width) : "");
     setL(floor.length ? String(floor.length) : "");
+    setZoom(1);
   }, [floor.id, floor.width, floor.length]);
+
+  const ZOOM_MIN = 1;
+  const ZOOM_MAX = 5;
+  const ZOOM_STEP = 0.5;
+  const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) * 10) / 10));
+  const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) * 10) / 10));
 
   const savedW = floor.width || 0;
   const savedL = floor.length || 0;
@@ -188,12 +196,15 @@ export default function FloorPlanSection({ floor, points }) {
               <button onClick={() => setPlacingId(null)} className="font-medium hover:underline">Cancelar</button>
             </div>
           )}
-          <div
-            ref={containerRef}
-            onClick={onPlanClick}
-            className={`relative w-full overflow-hidden rounded-lg border border-border bg-muted/30 ${placingId ? "cursor-crosshair" : ""}`}
-          >
-            <img src={floor.plan_url} alt="Plano del piso" draggable={false} className="block w-full h-auto select-none pointer-events-none" />
+          <div className="relative">
+            <div className={`w-full rounded-lg border border-border bg-muted/30 ${zoom > 1 ? "overflow-auto max-h-[75vh]" : "overflow-hidden"}`}>
+              <div
+                ref={containerRef}
+                onClick={onPlanClick}
+                className={`relative ${placingId ? "cursor-crosshair" : ""}`}
+                style={{ width: `${zoom * 100}%` }}
+              >
+                <img src={floor.plan_url} alt="Plano del piso" draggable={false} className="block w-full h-auto select-none pointer-events-none" />
             {placed.map((p) => {
               const pos = drag?.id === p.id ? { x: drag.x, y: drag.y } : { x: p.plan_x, y: p.plan_y };
               const pin = resolvePinStyle(activeProject, p.status);
@@ -237,6 +248,25 @@ export default function FloorPlanSection({ floor, points }) {
                 </div>
               );
             })}
+              </div>
+            </div>
+            {/* Zoom controls — kept at a fixed screen position over the plan.
+                Zooming grows the image (canvas width); the pins stay a fixed
+                pixel size so you can zoom in to place them more precisely. */}
+            <div className="absolute top-2 right-2 z-10 flex flex-col items-center gap-1 rounded-lg bg-card/90 backdrop-blur border border-border shadow-sm p-1">
+              <button onClick={zoomIn} disabled={zoom >= ZOOM_MAX} title="Acercar" className="p-1.5 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <span className="text-[10px] font-medium text-muted-foreground tabular-nums">{Math.round(zoom * 100)}%</span>
+              <button onClick={zoomOut} disabled={zoom <= ZOOM_MIN} title="Alejar" className="p-1.5 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              {zoom !== 1 && (
+                <button onClick={() => setZoom(1)} title="Restablecer zoom" className="p-1.5 rounded hover:bg-muted">
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {unplaced.length > 0 && (
@@ -262,7 +292,7 @@ export default function FloorPlanSection({ floor, points }) {
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist. Los pines se guardan solos.</span>
+            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist · usa +/− para acercar el plano (el pin no cambia de tamaño). Los pines se guardan solos.</span>
             {savedW > 0 && savedL > 0 && (
               <span>Medidas: {savedW} × {savedL} m · {Math.round(savedW * savedL)} m²</span>
             )}
