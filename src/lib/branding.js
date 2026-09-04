@@ -131,6 +131,7 @@ export function resolveTerms(project) {
 // Configuración are core and always visible.
 export const TOGGLEABLE_MODULES = [
   { key: "puntos", label: "Puntos" },
+  { key: "checklist_masivo", label: "Checklist masivo" },
   { key: "materiales", label: "Materiales" },
   { key: "evidencia", label: "Evidencia" },
   { key: "rotulos", label: "Rótulos" },

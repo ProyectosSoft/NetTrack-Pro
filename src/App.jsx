@@ -58,6 +58,7 @@ const Templates = lazyWithRetry(() => import('./pages/Templates'));
 const Projects = lazyWithRetry(() => import('./pages/Projects'));
 const Materials = lazyWithRetry(() => import('./pages/Materials'));
 const Evidence = lazyWithRetry(() => import('./pages/Evidence'));
+const BulkChecklist = lazyWithRetry(() => import('./pages/BulkChecklist'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -82,6 +83,7 @@ const AppRoutes = () => {
             <Route path="/pisos" element={<Floors />} />
             <Route path="/pisos/:floorId" element={<FloorDetail />} />
             <Route path="/puntos" element={<Points />} />
+            <Route path="/checklist-masivo" element={<BulkChecklist />} />
             <Route path="/rotulos" element={<Labels />} />
             <Route path="/materiales" element={<Materials />} />
             <Route path="/evidencia" element={<Evidence />} />

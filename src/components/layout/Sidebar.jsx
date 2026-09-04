@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Building2, Settings, X, Network, ClipboardList, Tag, FolderKanban, Package, Images } from "lucide-react";
+import { LayoutDashboard, Building2, Settings, X, Network, ClipboardList, Tag, FolderKanban, Package, Images, ListChecks } from "lucide-react";
 import { useProject, useTerms } from "@/lib/ProjectContext";
 import { isModuleHidden } from "@/lib/branding";
 import ThemeToggle from "@/components/shared/ThemeToggle";
@@ -12,6 +12,7 @@ const navItems = [
   { label: "Proyectos", path: "/proyectos", icon: FolderKanban, termKey: "projects" },
   { label: "Pisos", path: "/pisos", icon: Building2, termKey: "floors" },
   { label: "Puntos", path: "/puntos", icon: Network, module: "puntos", termKey: "points" },
+  { label: "Checklist masivo", path: "/checklist-masivo", icon: ListChecks, module: "checklist_masivo" },
   { label: "Materiales", path: "/materiales", icon: Package, module: "materiales" },
   { label: "Evidencia", path: "/evidencia", icon: Images, module: "evidencia" },
   { label: "Rótulos", path: "/rotulos", icon: Tag, module: "rotulos" },
