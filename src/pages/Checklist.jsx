@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { db } from "@/api/db";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -112,9 +112,13 @@ export default function Checklist() {
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/pisos/${point.floor_id}`} className="p-2 rounded-lg hover:bg-muted">
+        <button
+          onClick={() => { if (window.history.length > 1) navigate(-1); else navigate(`/pisos/${point.floor_id}`); }}
+          className="p-2 rounded-lg hover:bg-muted"
+          title="Volver"
+        >
           <ArrowLeft className="w-4 h-4" />
-        </Link>
+        </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <DeviceIcon type={form.device_type} />
