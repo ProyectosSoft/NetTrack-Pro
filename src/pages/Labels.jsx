@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Search, Printer, Download, Tag, RotateCcw, Save, Pencil, Trash2, Check, BookMarked } from "lucide-react";
 import DeviceIcon from "@/components/shared/DeviceIcon";
+import MultiSelectFilter from "@/components/shared/MultiSelectFilter";
 import {
   DEFAULT_CONFIG,
   SHEET_PRESETS,
@@ -192,8 +193,8 @@ export default function Labels() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [selected, setSelected] = useState(() => new Set());
   const [search, setSearch] = useState("");
-  const [filterFloor, setFilterFloor] = useState("all");
-  const [filterDevice, setFilterDevice] = useState("all");
+  const [filterFloors, setFilterFloors] = useState(() => new Set()); // empty = all
+  const [filterDevices, setFilterDevices] = useState(() => new Set()); // empty = all
 
   // Label-template management
   const [activeTemplateId, setActiveTemplateId] = useState(null);
@@ -288,12 +289,14 @@ export default function Labels() {
     () =>
       points.filter((p) => {
         if (search && !(p.name || "").toLowerCase().includes(search.toLowerCase())) return false;
-        if (filterFloor !== "all" && p.floor_id !== filterFloor) return false;
-        if (filterDevice !== "all" && p.device_type !== filterDevice) return false;
+        if (filterFloors.size > 0 && !filterFloors.has(p.floor_id)) return false;
+        if (filterDevices.size > 0 && !filterDevices.has(p.device_type)) return false;
         return true;
       }),
-    [points, search, filterFloor, filterDevice]
+    [points, search, filterFloors, filterDevices]
   );
+
+  const floorOptions = useMemo(() => floors.map((f) => ({ value: f.id, label: f.name })), [floors]);
 
   const selectedPoints = useMemo(() => points.filter((p) => selected.has(p.id)), [points, selected]);
 
@@ -405,20 +408,20 @@ export default function Labels() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Buscar punto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
               </div>
-              <Select value={filterFloor} onValueChange={setFilterFloor}>
-                <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Piso" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los pisos</SelectItem>
-                  {floors.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filterDevice} onValueChange={setFilterDevice}>
-                <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Dispositivo" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los dispositivos</SelectItem>
-                  {deviceTypes.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                className="w-44"
+                allLabel="Todos los pisos"
+                options={floorOptions}
+                selected={filterFloors}
+                onChange={setFilterFloors}
+              />
+              <MultiSelectFilter
+                className="w-48"
+                allLabel="Todos los dispositivos"
+                options={deviceTypes}
+                selected={filterDevices}
+                onChange={setFilterDevices}
+              />
             </div>
             <div className="px-4 py-2 flex items-center justify-between border-b border-border bg-muted/30">
               <button onClick={allFilteredSelected ? clearSelection : selectAllFiltered} className="text-xs font-medium text-primary hover:underline">
