@@ -176,6 +176,12 @@ export default function FloorDetail() {
 
   const sortedSpaces = useMemo(() => sortItems(spaces, sortMode), [spaces, sortMode]);
 
+  // Overall floor progress = average completion across all its points.
+  const floorProgress = useMemo(
+    () => (points.length ? Math.round(points.reduce((a, p) => a + getPointProgress(p), 0) / points.length) : 0),
+    [points]
+  );
+
   const addSpace = () => run(async () => {
     if (!spaceName.trim()) return;
     const ns = await db.entities.Space.create({
@@ -266,7 +272,17 @@ export default function FloorDetail() {
               <Pencil className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-muted-foreground text-sm mt-0.5">{spaces.length} espacios · {points.length} puntos</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-muted-foreground text-sm">{spaces.length} espacios · {points.length} puntos</p>
+            {points.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                <span className="hidden sm:block w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <span className="block h-full bg-primary rounded-full" style={{ width: `${floorProgress}%` }} />
+                </span>
+                {floorProgress}%
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex w-full sm:w-auto flex-wrap gap-2">
           <Button onClick={exportPdf} size="sm" variant="outline" className="flex-1 sm:flex-none"><Download className="w-4 h-4 mr-1.5" /> Exportar PDF</Button>
