@@ -19,6 +19,7 @@ import { Loader2, Search, ChevronRight, Pencil, Trash2, ArrowUp, ArrowDown, Chev
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, hasObservations } from "@/lib/pointProgress";
 import { useUndoableToast } from "@/lib/UndoContext";
+import { useSessionState } from "@/lib/useSessionState";
 
 export default function Points() {
   const { floors, spaces, points, isLoading: loading, isError } = useScopedData();
@@ -26,11 +27,12 @@ export default function Points() {
   const invalidate = useInvalidateData();
   const run = useAction();
   const undoToast = useUndoableToast();
-  const [search, setSearch] = useState("");
-  const [filterFloor, setFilterFloor] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterType, setFilterType] = useState("all");
-  const [filterTech, setFilterTech] = useState("all");
+  // Persisted so filters survive entering a point and coming back.
+  const [search, setSearch] = useSessionState("points.search", "");
+  const [filterFloor, setFilterFloor] = useSessionState("points.filterFloor", "all");
+  const [filterStatus, setFilterStatus] = useSessionState("points.filterStatus", "all");
+  const [filterType, setFilterType] = useSessionState("points.filterType", "all");
+  const [filterTech, setFilterTech] = useSessionState("points.filterTech", "all");
   const [editPoint, setEditPoint] = useState(null);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [sortKey, setSortKey] = useState(null);

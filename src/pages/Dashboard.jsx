@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTemplates } from "@/lib/queries";
 import { useScopedData } from "@/lib/ProjectContext";
@@ -9,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import { getPointProgress, aggregatePhaseProgress, hasObservations } from "@/lib/pointProgress";
 import { getTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
+import { useSessionState } from "@/lib/useSessionState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, AlertCircle, Clock, Loader2, ListTodo, MessageSquareText } from "lucide-react";
 
@@ -31,11 +32,12 @@ function isPointMissing(point, fieldKey) {
 export default function Dashboard() {
   const { floors, spaces, points, isLoading: loading } = useScopedData();
   const { data: templates = [] } = useTemplates();
-  const [filterFloor, setFilterFloor] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterTech, setFilterTech] = useState("all");
-  const [filterDevice, setFilterDevice] = useState("all");
-  const [filterMissing, setFilterMissing] = useState("all");
+  // Persisted so filters survive entering a point and coming back.
+  const [filterFloor, setFilterFloor] = useSessionState("dash.filterFloor", "all");
+  const [filterStatus, setFilterStatus] = useSessionState("dash.filterStatus", "all");
+  const [filterTech, setFilterTech] = useSessionState("dash.filterTech", "all");
+  const [filterDevice, setFilterDevice] = useSessionState("dash.filterDevice", "all");
+  const [filterMissing, setFilterMissing] = useSessionState("dash.filterMissing", "all");
 
   const filtered = useMemo(() => {
     return points.filter((p) => {
