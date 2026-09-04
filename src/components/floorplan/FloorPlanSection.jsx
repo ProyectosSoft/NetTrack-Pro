@@ -51,19 +51,59 @@ export default function FloorPlanSection({ floor, points }) {
   const zoomIn = () => setZoom((z) => clampZoom(z + ZOOM_STEP));
   const zoomOut = () => setZoom((z) => clampZoom(z - ZOOM_STEP));
 
-  // Ctrl+wheel (or trackpad pinch, which fires wheel+ctrlKey) and touch pinch
-  // zoom. Wired natively so preventDefault works (React wheel/touch are passive).
+  // Mouse-wheel zoom (anchored at the cursor), touch pinch zoom, and pan by
+  // holding the middle mouse button (a "hand"). Wired natively so preventDefault
+  // works (React wheel/touch are passive) and to stop middle-click autoscroll.
   const scrollRef = useRef(null);
   const zoomRef = useRef(1);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    // Wheel zooms, keeping the point under the cursor fixed on screen.
     const onWheel = (e) => {
-      if (!e.ctrlKey) return; // plain scroll pans; Ctrl+wheel zooms
       e.preventDefault();
-      setZoom((z) => clampZoom(z + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)));
+      const rect = el.getBoundingClientRect();
+      const offX = e.clientX - rect.left;
+      const offY = e.clientY - rect.top;
+      const contentX = el.scrollLeft + offX;
+      const contentY = el.scrollTop + offY;
+      const oldZoom = zoomRef.current;
+      const newZoom = clampZoom(oldZoom + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+      if (newZoom === oldZoom) return;
+      const ratio = newZoom / oldZoom;
+      setZoom(newZoom);
+      requestAnimationFrame(() => {
+        el.scrollLeft = contentX * ratio - offX;
+        el.scrollTop = contentY * ratio - offY;
+      });
     };
+
+    // Middle-button drag = pan.
+    let pan = null;
+    const onMouseMove = (e) => {
+      if (!pan) return;
+      el.scrollLeft = pan.left - (e.clientX - pan.x);
+      el.scrollTop = pan.top - (e.clientY - pan.y);
+    };
+    const onMouseUp = () => {
+      if (!pan) return;
+      pan = null;
+      el.style.cursor = "";
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    const onMouseDown = (e) => {
+      if (e.button !== 1) return; // middle button only
+      e.preventDefault(); // stop the browser's autoscroll
+      pan = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop };
+      el.style.cursor = "grabbing";
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    };
+
+    // Touch pinch zoom.
     const twoFingerDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     let pinch = null;
     const onTouchStart = (e) => {
@@ -76,15 +116,20 @@ export default function FloorPlanSection({ floor, points }) {
       }
     };
     const onTouchEnd = (e) => { if (e.touches.length < 2) pinch = null; };
+
     el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("mousedown", onMouseDown);
     el.addEventListener("touchstart", onTouchStart, { passive: false });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd);
     return () => {
       el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("mousedown", onMouseDown);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
     // Re-attach when the plan image appears/changes (the scroll node mounts then).
   }, [floor.plan_url]);
@@ -332,7 +377,7 @@ export default function FloorPlanSection({ floor, points }) {
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist · acerca el plano con +/−, Ctrl+rueda o pellizco (el pin no cambia de tamaño). Los pines se guardan solos.</span>
+            <span>Arrastra un pin para moverlo · toca un pin para abrir su checklist · acerca el plano con la rueda del mouse, +/− o pellizco (el pin no cambia de tamaño) · mantén presionada la rueda para desplazarte por el plano. Los pines se guardan solos.</span>
             {savedW > 0 && savedL > 0 && (
               <span>Medidas: {savedW} × {savedL} m · {Math.round(savedW * savedL)} m²</span>
             )}
