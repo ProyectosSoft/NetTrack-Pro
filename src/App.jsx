@@ -20,19 +20,44 @@ const persister = createSyncStoragePersister({
   key: 'nettrack.query-cache',
 });
 
+// Lazy import with a one-time auto-reload. After a new deploy, chunk filenames
+// change, so a tab left open references files that 404 ("Failed to fetch
+// dynamically imported module"). On that failure we reload once (fetching the
+// fresh index + chunks) instead of showing an error; a per-session flag prevents
+// a reload loop if the import is genuinely broken.
+const CHUNK_RELOAD_KEY = 'nettrack:chunk-reloaded';
+function lazyWithRetry(factory) {
+  return lazy(async () => {
+    try {
+      const mod = await factory();
+      try { sessionStorage.removeItem(CHUNK_RELOAD_KEY); } catch { /* ignore */ }
+      return mod;
+    } catch (err) {
+      let reloaded = false;
+      try { reloaded = sessionStorage.getItem(CHUNK_RELOAD_KEY) === '1'; } catch { /* ignore */ }
+      if (!reloaded) {
+        try { sessionStorage.setItem(CHUNK_RELOAD_KEY, '1'); } catch { /* ignore */ }
+        window.location.reload();
+        return new Promise(() => {}); // hold the UI while the page reloads
+      }
+      throw err;
+    }
+  });
+}
+
 // Route-level code splitting: each page loads on demand instead of shipping
 // in the initial bundle.
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Floors = lazy(() => import('./pages/Floors'));
-const FloorDetail = lazy(() => import('./pages/FloorDetail'));
-const Points = lazy(() => import('./pages/Points'));
-const Labels = lazy(() => import('./pages/Labels'));
-const Checklist = lazy(() => import('./pages/Checklist'));
-const Configuration = lazy(() => import('./pages/Configuration'));
-const Templates = lazy(() => import('./pages/Templates'));
-const Projects = lazy(() => import('./pages/Projects'));
-const Materials = lazy(() => import('./pages/Materials'));
-const Evidence = lazy(() => import('./pages/Evidence'));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
+const Floors = lazyWithRetry(() => import('./pages/Floors'));
+const FloorDetail = lazyWithRetry(() => import('./pages/FloorDetail'));
+const Points = lazyWithRetry(() => import('./pages/Points'));
+const Labels = lazyWithRetry(() => import('./pages/Labels'));
+const Checklist = lazyWithRetry(() => import('./pages/Checklist'));
+const Configuration = lazyWithRetry(() => import('./pages/Configuration'));
+const Templates = lazyWithRetry(() => import('./pages/Templates'));
+const Projects = lazyWithRetry(() => import('./pages/Projects'));
+const Materials = lazyWithRetry(() => import('./pages/Materials'));
+const Evidence = lazyWithRetry(() => import('./pages/Evidence'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
