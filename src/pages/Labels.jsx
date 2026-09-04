@@ -37,6 +37,9 @@ import { downloadLabelsPdf, printLabelsPdf } from "@/lib/exportLabelsPdf";
 // pt -> mm, used to keep preview font sizes proportional to the PDF output.
 const PT_PER_MM = 72 / 25.4;
 
+// Fixed device priority for the "device" print order (AP, then camera, then eth).
+const DEVICE_ORDER = { access_point: 0, camara: 1, ethernet: 2 };
+
 // --- Small labelled controls -------------------------------------------------
 
 function NumField({ label, value, onChange, min = 0, max = 999, step = 1, suffix }) {
@@ -300,6 +303,34 @@ export default function Labels() {
 
   const selectedPoints = useMemo(() => points.filter((p) => selected.has(p.id)), [points, selected]);
 
+  // Floors in their manual order → index map, so "floor" print order follows the
+  // arrangement set on the Pisos screen.
+  const floorOrder = useMemo(() => {
+    const m = {};
+    [...floors].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).forEach((f, i) => { m[f.id] = i; });
+    return m;
+  }, [floors]);
+
+  // The selected points arranged for printing, per config.sortBy.
+  const orderedPoints = useMemo(() => {
+    const arr = [...selectedPoints];
+    const byName = (a, b) => (a.name || "").localeCompare(b.name || "", undefined, { numeric: true });
+    const byFloor = (a, b) => (floorOrder[a.floor_id] ?? 999) - (floorOrder[b.floor_id] ?? 999);
+    const bySpace = (a, b) => (spaceMap[a.space_id] || "").localeCompare(spaceMap[b.space_id] || "", undefined, { numeric: true });
+    const byDevice = (a, b) => (DEVICE_ORDER[a.device_type] ?? 9) - (DEVICE_ORDER[b.device_type] ?? 9);
+    const chain = (...cmps) => (a, b) => { for (const c of cmps) { const r = c(a, b); if (r) return r; } return 0; };
+    const cmp = {
+      name: byName,
+      floor: chain(byFloor, byName),
+      space: chain(bySpace, byName),
+      device: chain(byDevice, byName),
+      floor_device: chain(byFloor, byDevice, byName),
+      device_floor: chain(byDevice, byFloor, byName),
+    }[config.sortBy];
+    if (cmp) arr.sort(cmp);
+    return arr; // "selection" (or unknown) keeps the current order
+  }, [selectedPoints, config.sortBy, floorOrder, spaceMap]);
+
   const toggle = (id) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -312,8 +343,8 @@ export default function Labels() {
   const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
 
   const canPrint = selectedPoints.length > 0 && computeLayout(config).valid;
-  const handlePrint = () => { if (canPrint) printLabelsPdf(selectedPoints, config, maps); };
-  const handleDownload = () => { if (canPrint) run(() => downloadLabelsPdf(selectedPoints, config, maps)); };
+  const handlePrint = () => { if (canPrint) printLabelsPdf(orderedPoints, config, maps); };
+  const handleDownload = () => { if (canPrint) run(() => downloadLabelsPdf(orderedPoints, config, maps)); };
 
   if (loading) {
     return (
@@ -506,6 +537,21 @@ export default function Labels() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <NumField label="Copias por punto" value={config.copies} onChange={(v) => set({ copies: v })} min={1} max={100} />
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Orden de impresión</Label>
+                    <Select value={config.sortBy} onValueChange={(v) => set({ sortBy: v })}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="selection">Orden de selección</SelectItem>
+                        <SelectItem value="name">Nombre (A–Z)</SelectItem>
+                        <SelectItem value="floor">Piso</SelectItem>
+                        <SelectItem value="device">Tipo de dispositivo</SelectItem>
+                        <SelectItem value="floor_device">Piso, luego dispositivo</SelectItem>
+                        <SelectItem value="device_floor">Dispositivo, luego piso</SelectItem>
+                        <SelectItem value="space">Espacio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   <NumField label="M. sup." value={config.marginTop} onChange={(v) => set({ marginTop: v })} min={0} max={100} step={0.5} />
@@ -623,7 +669,7 @@ export default function Labels() {
                 Selecciona al menos un punto para ver la vista previa.
               </div>
             ) : (
-              <SheetPreview config={config} points={selectedPoints} maps={maps} />
+              <SheetPreview config={config} points={orderedPoints} maps={maps} />
             )}
           </div>
         </div>

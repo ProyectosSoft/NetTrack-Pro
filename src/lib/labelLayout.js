@@ -55,6 +55,10 @@ export const DEFAULT_CONFIG = {
   gapY: 3,
   copies: 1, // copies of each point
 
+  // Print order of the selected points.
+  // selection | name | floor | device | floor_device | device_floor | space
+  sortBy: "selection",
+
   // Box (recuadro)
   showBorder: true,
   borderWidth: 0.3, // mm
