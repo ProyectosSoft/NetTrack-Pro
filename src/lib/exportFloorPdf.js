@@ -180,7 +180,9 @@ function drawCover(r, { kicker, title, scope }) {
   line(doc, kicker.toUpperCase(), margin, 30, { size: 7.5, style: "bold", color: theme.onBandSoft, charSpace: 1.6, maxW: textW });
   line(doc, title, margin, 45, { size: 26, style: "bold", color: theme.onBand, maxW: textW });
   line(doc, scope, margin, 87, { size: 11, style: "bold", color: theme.onBand, maxW: textW });
-  const who = generatedBy(r.user);
+  // Prefer the project's "Elaborado por" (responsible), then its contact person,
+  // then the app user — so the cover names a real person, not "Usuario local".
+  const who = (r.project?.prepared_by || "").trim() || (r.project?.contact_name || "").trim() || generatedBy(r.user);
   line(doc, `Generado el ${formatToday()}${who ? ` · por ${who}` : ""}`, margin, 105, {
     size: 8.5, color: theme.onBandSoft, maxW: textW,
   });

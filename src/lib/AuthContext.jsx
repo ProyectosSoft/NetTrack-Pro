@@ -5,7 +5,9 @@ import React, { createContext, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
-const VALUE = { user: { id: 'local', full_name: 'Usuario local', email: '' } };
+// No name by default, so the PDF "por ..." line stays empty unless the project
+// defines an "Elaborado por" / contact person (never shows "Usuario local").
+const VALUE = { user: { id: 'local', full_name: '', email: '' } };
 
 export const AuthProvider = ({ children }) => (
   <AuthContext.Provider value={VALUE}>{children}</AuthContext.Provider>

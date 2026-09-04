@@ -28,7 +28,7 @@ const STATUS = {
 
 const EMPTY = {
   project_name: "", client: "", status: "activo", address: "", city: "",
-  url: "", phone: "", email: "", contact_name: "", logo_url: "",
+  url: "", phone: "", email: "", contact_name: "", prepared_by: "", logo_url: "",
   start_date: "", end_date: "", description: "",
   primary_color: "", hidden_modules: [], terminology: {}, point_fields: [],
 };
@@ -255,6 +255,10 @@ export default function Projects() {
               <div className="sm:col-span-2">
                 <Label className="text-xs mb-1.5 block flex items-center gap-1"><User className="w-3 h-3" /> Persona de contacto</Label>
                 <Input value={form.contact_name} onChange={(e) => set({ contact_name: e.target.value })} />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs mb-1.5 block flex items-center gap-1"><User className="w-3 h-3" /> Elaborado por (aparece en el PDF)</Label>
+                <Input value={form.prepared_by} onChange={(e) => set({ prepared_by: e.target.value })} placeholder="Responsable o técnico a cargo" />
               </div>
               <div>
                 <Label className="text-xs mb-1.5 block">Fecha de inicio</Label>
