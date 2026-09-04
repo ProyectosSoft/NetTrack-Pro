@@ -18,6 +18,7 @@ import { exportProjectPdf } from "@/lib/exportFloorPdf";
 import { exportPointsCsv } from "@/lib/exportPointsCsv";
 import { cloneFloor, deleteCreated } from "@/lib/clone";
 import { useUndoableToast } from "@/lib/UndoContext";
+import { floorNameExists } from "@/lib/nameValidation";
 import DataError from "@/components/shared/DataError";
 
 export default function Floors() {
@@ -48,8 +49,12 @@ export default function Floors() {
   const [floorToDelete, setFloorToDelete] = useState(null);
 
   const saveEditFloor = () => run(async () => {
-    if (!editName.trim()) return;
-    await db.entities.Floor.update(editFloor.id, { name: editName.trim() });
+    const name = editName.trim();
+    if (!name) return;
+    if (floorNameExists(floors, editFloor.project_id, name, editFloor.id)) {
+      throw new Error(`Ya existe un piso llamado "${name}" en este proyecto.`);
+    }
+    await db.entities.Floor.update(editFloor.id, { name });
     setEditFloor(null);
     setEditName("");
     invalidate();
@@ -66,8 +71,12 @@ export default function Floors() {
   });
 
   const addFloor = () => run(async () => {
-    if (!floorName.trim() || !activeProjectId) return;
-    const nf = await db.entities.Floor.create({ name: floorName.trim(), order: floors.length, project_id: activeProjectId });
+    const name = floorName.trim();
+    if (!name || !activeProjectId) return;
+    if (floorNameExists(floors, activeProjectId, name)) {
+      throw new Error(`Ya existe un piso llamado "${name}" en este proyecto.`);
+    }
+    const nf = await db.entities.Floor.create({ name, order: floors.length, project_id: activeProjectId });
     setFloorName("");
     setDialogOpen(false);
     invalidate();

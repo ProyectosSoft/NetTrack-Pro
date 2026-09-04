@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
 import { useUndoableToast } from "@/lib/UndoContext";
+import { useScopedData } from "@/lib/ProjectContext";
+import { pointNameExists } from "@/lib/nameValidation";
 
 // Edit dialog for an installation point, shared by the floor detail and the
 // points list. Besides the basic fields it can move the point to another space
@@ -20,6 +22,7 @@ export default function PointEditDialog({ point, floors = [], spaces = [], onClo
   const invalidate = useInvalidateData();
   const run = useAction();
   const undoToast = useUndoableToast();
+  const { points: allPoints } = useScopedData();
   const [name, setName] = useState("");
   const [deviceType, setDeviceType] = useState("ethernet");
   const [description, setDescription] = useState("");
@@ -61,6 +64,9 @@ export default function PointEditDialog({ point, floors = [], spaces = [], onClo
     setSaving(true);
     const prev = { ...point };
     const ok = await run(async () => {
+      if (pointNameExists(allPoints, spaceId, name.trim(), point.id)) {
+        throw new Error(`Ya existe un punto llamado "${name.trim()}" en ese espacio.`);
+      }
       await db.entities.InstallationPoint.update(point.id, {
         name: name.trim(),
         device_type: deviceType,

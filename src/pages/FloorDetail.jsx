@@ -22,6 +22,7 @@ import FloorPlanSection from "@/components/floorplan/FloorPlanSection";
 import { ArrowLeft, Plus, Loader2, Trash2, ChevronRight, Pencil, Download, ArrowDownUp, Copy, Layers, LayoutTemplate, AlertTriangle } from "lucide-react";
 import { cloneSpace, changeSpaceTemplate, deleteCreated } from "@/lib/clone";
 import { useUndoableToast } from "@/lib/UndoContext";
+import { spaceNameExists, pointNameExists } from "@/lib/nameValidation";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { getPointProgress, getPointPhaseProgress, aggregatePhaseProgress } from "@/lib/pointProgress";
 import { sortItems, parseOrder, formatOrder } from "@/lib/ordering";
@@ -130,6 +131,17 @@ export default function FloorDetail() {
   const bulkAdd = () => run(async () => {
     const names = bulkNames();
     if (!bulkSpace || names.length === 0) return;
+    // Block names that already exist in the target space or repeat within the batch.
+    const seen = new Set();
+    const clashes = [];
+    for (const nm of names) {
+      const key = nm.trim().toLocaleLowerCase();
+      if (seen.has(key) || pointNameExists(points, bulkSpace, nm)) clashes.push(nm);
+      seen.add(key);
+    }
+    if (clashes.length) {
+      throw new Error(`Estos nombres ya existen en el espacio: ${clashes.slice(0, 5).join(", ")}${clashes.length > 5 ? "…" : ""}.`);
+    }
     const ids = [];
     for (let i = 0; i < names.length; i += 1) {
       const np = await db.entities.InstallationPoint.create({
@@ -159,9 +171,13 @@ export default function FloorDetail() {
   });
 
   const saveEditSpace = () => run(async () => {
-    if (!editSpaceName.trim()) return;
+    const name = editSpaceName.trim();
+    if (!name) return;
+    if (spaceNameExists(spaces, editSpace.floor_id, name, editSpace.id)) {
+      throw new Error(`Ya existe un espacio llamado "${name}" en este piso.`);
+    }
     await db.entities.Space.update(editSpace.id, {
-      name: editSpaceName.trim(), space_type: editSpaceType, order: parseOrder(editSpaceOrder),
+      name, space_type: editSpaceType, order: parseOrder(editSpaceOrder),
     });
     setEditSpace(null);
     invalidate();
@@ -183,9 +199,13 @@ export default function FloorDetail() {
   );
 
   const addSpace = () => run(async () => {
-    if (!spaceName.trim()) return;
+    const name = spaceName.trim();
+    if (!name) return;
+    if (spaceNameExists(spaces, floorId, name)) {
+      throw new Error(`Ya existe un espacio llamado "${name}" en este piso.`);
+    }
     const ns = await db.entities.Space.create({
-      name: spaceName.trim(), floor_id: floorId, space_type: spaceType, order: parseOrder(spaceOrder),
+      name, floor_id: floorId, space_type: spaceType, order: parseOrder(spaceOrder),
     });
     setSpaceName("");
     setSpaceOrder("");
@@ -200,9 +220,13 @@ export default function FloorDetail() {
   });
 
   const addPoint = () => run(async () => {
-    if (!pointName.trim() || !selectedSpace) return;
+    const name = pointName.trim();
+    if (!name || !selectedSpace) return;
+    if (pointNameExists(points, selectedSpace, name)) {
+      throw new Error(`Ya existe un punto llamado "${name}" en este espacio.`);
+    }
     const np = await db.entities.InstallationPoint.create({
-      name: pointName.trim(), floor_id: floorId, space_id: selectedSpace, device_type: deviceType,
+      name, floor_id: floorId, space_id: selectedSpace, device_type: deviceType,
       description: pointDesc.trim(), order: parseOrder(pointOrder),
     });
     setPointName("");
