@@ -91,3 +91,22 @@ export function getTemplate(deviceType) {
   }
   return DEFAULT_TEMPLATES[deviceType] || DEFAULT_TEMPLATES.ethernet;
 }
+
+// The template as it applies to a specific point: its device template minus the
+// items that point marked as "no aplica" (point.excluded_items). Standard fields
+// are excluded by their key; custom checks by "custom:<id>". Used everywhere a
+// point's applicable items or progress is computed, so a customized point counts
+// only the items that actually apply to it.
+export function getEffectiveTemplate(point) {
+  const tpl = getTemplate(point?.device_type);
+  const excluded = Array.isArray(point?.excluded_items) ? point.excluded_items : [];
+  if (excluded.length === 0) return tpl;
+  const ex = new Set(excluded);
+  return {
+    ...tpl,
+    activities: (tpl.activities || []).filter((f) => !ex.has(f)),
+    accessories: (tpl.accessories || []).filter((f) => !ex.has(f)),
+    equipment: (tpl.equipment || []).filter((f) => !ex.has(f)),
+    customChecks: (tpl.customChecks || []).filter((c) => !ex.has(`custom:${c.id}`)),
+  };
+}

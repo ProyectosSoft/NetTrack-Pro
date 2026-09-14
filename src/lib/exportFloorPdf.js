@@ -1,4 +1,4 @@
-import { getTemplate, FIELD_LABELS } from "./checklistTemplates";
+import { getEffectiveTemplate, FIELD_LABELS } from "./checklistTemplates";
 import {
   getPointProgress,
   getPointPhaseProgress,
@@ -755,7 +755,7 @@ function drawEvidenceCard(r, photos) {
 
 // Full sheet for one point: same sections, order and wording as the web view.
 async function drawPointSheet(r, pt, { floorName, spaceName }) {
-  const tpl = getTemplate(pt.device_type);
+  const tpl = getEffectiveTemplate(pt); // honour the point's "no aplica" items
   const photos = await Promise.all((pt.evidencia || []).map((url) => loadPhoto(url)));
 
   r.crumb = `${floorName} · ${spaceName} · ${pt.name || ""}`;

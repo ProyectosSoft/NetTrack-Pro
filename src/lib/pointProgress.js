@@ -1,4 +1,4 @@
-import { getTemplate } from "./checklistTemplates";
+import { getEffectiveTemplate } from "./checklistTemplates";
 
 // A point counts as "con observaciones" when flagged with that status OR when it
 // carries any observation text, so filters surface noted points regardless of
@@ -45,7 +45,7 @@ export function getPointProgress(point) {
   if (!point) return 0;
   if (point.status === "finalizado") return 100;
 
-  const tpl = getTemplate(point.device_type);
+  const tpl = getEffectiveTemplate(point);
   const fields = [
     ...tpl.activities,
     ...tpl.accessories,
@@ -62,7 +62,7 @@ export function getPointProgress(point) {
 // Per-phase progress: { piso: {done, total, pct}, rack: {done, total, pct} }.
 // A finalized point counts as fully done in every phase, matching getPointProgress.
 export function getPointPhaseProgress(point) {
-  const tpl = getTemplate(point?.device_type);
+  const tpl = getEffectiveTemplate(point);
   const groups = phaseGroups(tpl);
   const finalizado = point?.status === "finalizado";
   const result = {};

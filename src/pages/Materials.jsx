@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useScopedData } from "@/lib/ProjectContext";
 import { useTemplates, useInvalidateData } from "@/lib/queries";
-import { getTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
+import { getEffectiveTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
 import DataError from "@/components/shared/DataError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export default function Materials() {
     const mat = {};
     for (const p of scoped) {
       dev[p.device_type] = (dev[p.device_type] || 0) + 1;
-      const tpl = getTemplate(p.device_type);
+      const tpl = getEffectiveTemplate(p);
       for (const f of tpl.accessories || []) {
         const label = FIELD_LABELS[f] || f;
         mat[label] = (mat[label] || 0) + 1;

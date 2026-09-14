@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import StatusBadge from "@/components/shared/StatusBadge";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import ProgressBar from "@/components/shared/ProgressBar";
-import { ArrowLeft, Loader2, Save, Camera, X, Download } from "lucide-react";
-import { getTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
+import { ArrowLeft, Loader2, Save, Camera, X, Download, SlidersHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getTemplate, getEffectiveTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
 import { getPointPhaseProgress, getEquipmentFieldPhase } from "@/lib/pointProgress";
 import { usePoint, useFloors, useSpaces, useTechnicians, useInvalidateData } from "@/lib/queries";
 import { useAction } from "@/lib/useAction";
@@ -37,10 +38,19 @@ export default function Checklist() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [form, setForm] = useState(null);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
 
   useEffect(() => { if (point) setForm(point); }, [point]);
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  // Per-point item customization: a key in excluded_items means "no aplica".
+  const isExcluded = (key) => (form?.excluded_items || []).includes(key);
+  const setItemApplies = (key, applies) => {
+    const cur = new Set(form?.excluded_items || []);
+    if (applies) cur.delete(key); else cur.add(key);
+    update("excluded_items", [...cur]);
+  };
 
   // Location is read off the edited form, so the header and the export reflect
   // a pending move before it is saved.
@@ -105,8 +115,10 @@ export default function Checklist() {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
-  const tpl = getTemplate(form.device_type);
+  const baseTpl = getTemplate(form.device_type); // full template (for the editor)
+  const tpl = getEffectiveTemplate(form); // minus items marked "no aplica"
   const phases = getPointPhaseProgress(form);
+  const excludedCount = (form.excluded_items || []).length;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
@@ -128,6 +140,15 @@ export default function Checklist() {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <StatusBadge status={form.status} />
+          <Button
+            onClick={() => setCustomizeOpen(true)}
+            size="sm"
+            variant="outline"
+            title="Personalizar qué ítems aplican a este punto"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="sr-only sm:not-sr-only sm:ml-1.5">Ítems{excludedCount ? ` (${excludedCount})` : ""}</span>
+          </Button>
           <Button
             onClick={exportPdf}
             disabled={exporting}
@@ -231,6 +252,7 @@ export default function Checklist() {
       </Section>
 
       {/* Activities */}
+      {(tpl.activities.length > 0 || (tpl.customChecks || []).some((c) => c.category === "activities")) && (
       <Section title="Actividades" phase="piso">
         <div className="space-y-3">
           {tpl.activities.map((field) => (
@@ -253,6 +275,7 @@ export default function Checklist() {
           ))}
         </div>
       </Section>
+      )}
 
       {/* Accessories */}
       {(tpl.accessories.length > 0 || (tpl.customChecks || []).some((c) => c.category === "accessories")) && (
@@ -269,6 +292,7 @@ export default function Checklist() {
       )}
 
       {/* Equipment (mixed phase: some items are Piso, some Rack) */}
+      {(tpl.equipment.length > 0 || (tpl.customChecks || []).some((c) => c.category === "equipment")) && (
       <Section title="Equipo">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {tpl.equipment.map((field) => (
@@ -279,6 +303,7 @@ export default function Checklist() {
           ))}
         </div>
       </Section>
+      )}
 
       {/* Network */}
       {tpl.showNetwork && (
@@ -339,6 +364,43 @@ export default function Checklist() {
           Guardar cambios
         </Button>
       </div>
+
+      {/* Customize which template items apply to this point */}
+      <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Ítems que aplican a este punto</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Desmarca los ítems que <strong>no aplican</strong> a este punto. Los desmarcados no aparecen en el checklist ni cuentan para el avance.
+          </p>
+          <div className="space-y-4 mt-1">
+            {[
+              { title: "Actividades", fields: baseTpl.activities || [], customs: (baseTpl.customChecks || []).filter((c) => c.category === "activities") },
+              { title: "Accesorios", fields: baseTpl.accessories || [], customs: (baseTpl.customChecks || []).filter((c) => c.category === "accessories") },
+              { title: "Equipo", fields: baseTpl.equipment || [], customs: (baseTpl.customChecks || []).filter((c) => c.category === "equipment") },
+            ].map((g) => (g.fields.length || g.customs.length) ? (
+              <div key={g.title}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{g.title}</p>
+                <div className="space-y-1">
+                  {g.fields.map((field) => (
+                    <label key={field} className="flex items-center gap-2.5 cursor-pointer py-1">
+                      <Checkbox checked={!isExcluded(field)} onCheckedChange={(v) => setItemApplies(field, !!v)} />
+                      <span className={`text-sm ${isExcluded(field) ? "text-muted-foreground line-through" : ""}`}>{FIELD_LABELS[field] || field}</span>
+                    </label>
+                  ))}
+                  {g.customs.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2.5 cursor-pointer py-1">
+                      <Checkbox checked={!isExcluded(`custom:${c.id}`)} onCheckedChange={(v) => setItemApplies(`custom:${c.id}`, !!v)} />
+                      <span className={`text-sm ${isExcluded(`custom:${c.id}`) ? "text-muted-foreground line-through" : ""}`}>{c.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null)}
+          </div>
+          <Button onClick={() => setCustomizeOpen(false)} className="w-full mt-1">Listo</Button>
+          <p className="text-[11px] text-muted-foreground text-center">Pulsa «Guardar cambios» para conservarlo.</p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

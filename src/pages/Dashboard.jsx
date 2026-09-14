@@ -8,7 +8,7 @@ import ProgressBar from "@/components/shared/ProgressBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import DeviceIcon from "@/components/shared/DeviceIcon";
 import { getPointProgress, aggregatePhaseProgress, hasObservations } from "@/lib/pointProgress";
-import { getTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
+import { getTemplate, getEffectiveTemplate, FIELD_LABELS } from "@/lib/checklistTemplates";
 import { useSessionState } from "@/lib/useSessionState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, AlertCircle, Clock, Loader2, ListTodo, MessageSquareText } from "lucide-react";
@@ -19,7 +19,7 @@ const STATUS_COLORS = { pendiente: "#94a3b8", en_proceso: "#f59e0b", finalizado:
 // template but hasn't been checked. Finalized points are considered complete.
 function isPointMissing(point, fieldKey) {
   if (!fieldKey || point.status === "finalizado") return false;
-  const tpl = getTemplate(point.device_type);
+  const tpl = getEffectiveTemplate(point);
   if (fieldKey.startsWith("custom:")) {
     const id = fieldKey.slice(7);
     const applies = (tpl.customChecks || []).some((c) => c.id === id);

@@ -22,6 +22,7 @@ function freshPoint(src, floor_id, space_id) {
     device_type: src.device_type,
     order: src.order ?? 0,
     description: src.description || "",
+    excluded_items: src.excluded_items || [],
     floor_id,
     space_id,
     ...RESET,

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { db } from "@/api/db";
 import { useScopedData } from "@/lib/ProjectContext";
 import { useTemplates, useInvalidateData } from "@/lib/queries";
-import { getTemplate, FIELD_LABELS, ALL_FIELDS } from "@/lib/checklistTemplates";
+import { getTemplate, getEffectiveTemplate, FIELD_LABELS, ALL_FIELDS } from "@/lib/checklistTemplates";
 import { useAction } from "@/lib/useAction";
 import { useUndoableToast } from "@/lib/UndoContext";
 import DataError from "@/components/shared/DataError";
@@ -87,7 +87,7 @@ export default function BulkChecklist() {
     if (selItems.size === 0) return 0;
     let n = 0;
     for (const p of matching) {
-      const tpl = getTemplate(p.device_type);
+      const tpl = getEffectiveTemplate(p);
       let changes = false;
       for (const key of selItems) {
         if (key.startsWith("custom:")) {
@@ -109,7 +109,7 @@ export default function BulkChecklist() {
     try {
       const snapshot = [];
       for (const p of matching) {
-        const tpl = getTemplate(p.device_type);
+        const tpl = getEffectiveTemplate(p);
         const patch = {};
         let custom = null;
         for (const key of selItems) {
